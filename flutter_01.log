@@ -1,0 +1,54 @@
+Flutter crash report.
+Please report a bug at https://github.com/flutter/flutter/issues.
+
+## command
+
+flutter run -d chrome
+
+## exception
+
+DartDevelopmentServiceException: DartDevelopmentServiceException: Failed to start Dart Development Service
+
+```
+```
+
+## flutter doctor
+
+```
+[32m[✓][39m Flutter (Channel stable, 3.38.4, on macOS 26.4.1 25E253 darwin-arm64, locale ja-JP) [237ms]
+    [32m•[39m Flutter version 3.38.4 on channel stable at /opt/homebrew/share/flutter
+    [32m•[39m Upstream repository https://github.com/flutter/flutter.git
+    [32m•[39m Framework revision 66dd93f9a2 (7 months ago), 2025-12-03 14:56:10 -0800
+    [32m•[39m Engine revision a5cb96369e
+    [32m•[39m Dart version 3.10.3
+    [32m•[39m DevTools version 2.51.1
+    [32m•[39m Feature flags: enable-web, enable-linux-desktop, enable-macos-desktop, enable-windows-desktop, enable-android, enable-ios, cli-animations,
+      enable-native-assets, omit-legacy-version-file, enable-lldb-debugging
+
+[32m[✓][39m Android toolchain - develop for Android devices (Android SDK version 36.1.0) [1,533ms]
+    [32m•[39m Android SDK at /Users/igarashiayaka/Library/Android/sdk
+    [32m•[39m Emulator version 36.1.9.0 (build_id 13823996) (CL:N/A)
+    [32m•[39m Platform android-36, build-tools 36.1.0
+    [32m•[39m Java binary at: /Applications/Android Studio.app/Contents/jbr/Contents/Home/bin/java
+      This is the JDK bundled with the latest Android Studio installation on this machine.
+      To manually set the JDK path, use: `flutter config --jdk-dir="path/to/jdk"`.
+    [32m•[39m Java version OpenJDK Runtime Environment (build 21.0.7+-13880790-b1038.58)
+    [32m•[39m All Android licenses accepted.
+
+[32m[✓][39m Xcode - develop for iOS and macOS (Xcode 26.0.1) [883ms]
+    [32m•[39m Xcode at /Applications/Xcode.app/Contents/Developer
+    [32m•[39m Build 17A400
+    [32m•[39m CocoaPods version 1.16.2
+
+[32m[✓][39m Chrome - develop for the web [2ms]
+    [32m•[39m Chrome at /Applications/Google Chrome.app/Contents/MacOS/Google Chrome
+
+[32m[✓][39m Connected device (2 available) [5.8s]
+    [32m•[39m macOS (desktop) • macos  • darwin-arm64   • macOS 26.4.1 25E253 darwin-arm64
+    [32m•[39m Chrome (web)    • chrome • web-javascript • Google Chrome 149.0.7827.201
+
+[32m[✓][39m Network resources [2.6s]
+    [32m•[39m All expected network resources are available.
+
+[32m•[39m No issues found!
+```
