@@ -1,7 +1,8 @@
 // ignore_for_file: file_names
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import '../services/ai_service.dart';
+import '../services/db_service.dart';
 import '3_generation.dart';
 
 class InputScreen extends StatefulWidget {
@@ -24,6 +25,7 @@ class _InputScreenState extends State<InputScreen> {
   late final TextEditingController _controller;
   static const int _maxLength = 200;
   int _currentLength = 0;
+  bool _isLoading = false; // 処理中のローディング状態
 
   @override
   void initState() {
@@ -43,13 +45,37 @@ class _InputScreenState extends State<InputScreen> {
     super.dispose();
   }
 
-  void _save() {
-    widget.onSave(_controller.text);
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const GenerationScreen(),
-      ),
-    );
+  // 🌟 バックエンド連携を組み込んだ保存処理
+  Future<void> _save() async {
+    if (_controller.text.isEmpty) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      // 1. AI分析
+      final aiData = await AiService.analyzeHappyMemo(_controller.text);
+      
+      // 2. DB保存
+      await DbService.insertCoinData(_controller.text, aiData);
+
+      // 3. 成功したら画面遷移（aiDataを渡す！）
+      widget.onSave(_controller.text);
+      if (mounted) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => GenerationScreen(aiResult: aiData),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('保存に失敗しました: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -96,10 +122,7 @@ class _InputScreenState extends State<InputScreen> {
                     ],
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 18,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -109,24 +132,15 @@ class _InputScreenState extends State<InputScreen> {
                           maxLength: _maxLength,
                           decoration: const InputDecoration(
                             border: InputBorder.none,
-                            hintText: 'ここに入力してみよう...　（例：友達と楽しい時間を過ごせた、美味しいご飯を食べた、いい天気で気持ちよかったなど）',
+                            hintText: 'ここに入力してみよう...',
                             counterText: '',
-                            hintStyle: TextStyle(
-                              color: Color(0xFFB3B3B3),
-                              fontSize: 16,
-                            ),
+                            hintStyle: TextStyle(color: Color(0xFFB3B3B3), fontSize: 16),
                           ),
                         ),
                         const SizedBox(height: 12),
                         Align(
                           alignment: Alignment.bottomRight,
-                          child: Text(
-                            '$_currentLength / $_maxLength',
-                            style: const TextStyle(
-                              color: Color(0xFF9E9E9E),
-                              fontSize: 14,
-                            ),
-                          ),
+                          child: Text('$_currentLength / $_maxLength', style: const TextStyle(color: Color(0xFF9E9E9E), fontSize: 14)),
                         ),
                       ],
                     ),
@@ -140,42 +154,25 @@ class _InputScreenState extends State<InputScreen> {
                     child: OutlinedButton(
                       onPressed: widget.onBack,
                       style: OutlinedButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18),
-                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                         side: const BorderSide(color: Color(0xFFFFA1AB)),
                       ),
-                      child: const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 14),
-                        child: Text(
-                          '戻る',
-                          style: TextStyle(
-                            color: Color(0xFFFF5A79),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
+                      child: const Padding(padding: EdgeInsets.symmetric(vertical: 14), child: Text('戻る', style: TextStyle(color: Color(0xFFFF5A79), fontWeight: FontWeight.bold))),
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: _save,
+                      onPressed: _isLoading ? null : _save, // ローディング中は押せないようにする
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFFF5A79),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(18),
-                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                       ),
-                      child: const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 14),
-                        child: Text(
-                          '保存する ✨',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        child: _isLoading 
+                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                          : const Text('保存する ✨', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                       ),
                     ),
                   ),

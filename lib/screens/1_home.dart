@@ -1,17 +1,46 @@
 // ignore_for_file: file_names
 
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '5_collection.dart';
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({
-    super.key,
-    this.savedNote = '',
-    this.currentCoins = 128,
-  });
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
 
-  final String savedNote;
-  final int currentCoins;
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  int _coinCount = 0;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCoinCount();
+  }
+
+  // 🌟 DBから実際の保存件数を取得する
+  Future<void> _fetchCoinCount() async {
+    try {
+      final supabase = Supabase.instance.client;
+      // happy_coinsテーブルの自分のデータの件数を取得
+      final count = await supabase
+          .from('happy_coins')
+          .count(CountOption.exact);
+      
+      if (mounted) {
+        setState(() {
+          _coinCount = count;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('コイン数取得エラー: $e');
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,29 +64,20 @@ class HomeScreen extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
-                    Icons.monetization_on,
-                    color: Colors.amber,
-                    size: 40,
-                  ),
+                  const Icon(Icons.monetization_on, color: Colors.amber, size: 40),
                   const SizedBox(width: 12),
-                  Text(
-                    '$currentCoins',
-                    style: const TextStyle(
-                      fontSize: 48,
-                      fontWeight: FontWeight.w900,
-                      color: Color(0xFF2B2B2B),
-                    ),
-                  ),
+                  _isLoading
+                      ? const SizedBox(width: 40, height: 40, child: CircularProgressIndicator())
+                      : Text(
+                          '$_coinCount',
+                          style: const TextStyle(
+                            fontSize: 48,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF2B2B2B),
+                          ),
+                        ),
                   const SizedBox(width: 8),
-                  const Text(
-                    '枚',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF2B2B2B),
-                    ),
-                  ),
+                  const Text('枚', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF2B2B2B))),
                 ],
               ),
               const SizedBox(height: 30),
@@ -66,45 +86,23 @@ class HomeScreen extends StatelessWidget {
               Container(
                 width: double.infinity,
                 margin: const EdgeInsets.symmetric(horizontal: 24),
-                padding:
-                    const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
+                    BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
                   ],
                 ),
                 child: const Column(
                   children: [
-                    Text(
-                      '今日もポジティブを',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF4A4A4A),
-                      ),
-                    ),
+                    Text('今日もポジティブを', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF4A4A4A))),
                     SizedBox(height: 8),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
-                          '貯めていこう！',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF4A4A4A),
-                          ),
-                        ),
-                        Text(
-                          ' 💗',
-                          style: TextStyle(fontSize: 18),
-                        ),
+                        Text('貯めていこう！', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF4A4A4A))),
+                        Text(' 💗', style: TextStyle(fontSize: 18)),
                       ],
                     ),
                   ],
@@ -120,12 +118,7 @@ class HomeScreen extends StatelessWidget {
 }
 
 class PiggyBankCard extends StatelessWidget {
-  const PiggyBankCard({
-    super.key,
-    this.currentCoins = 7,
-  });
-
-  final int currentCoins;
+  const PiggyBankCard({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -140,62 +133,45 @@ class PiggyBankCard extends StatelessWidget {
         margin: const EdgeInsets.symmetric(horizontal: 20),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(32),
-        child: SizedBox(
-          height: 340,
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Image.asset(
-                    'assets/piggy_bank.png',
-                    fit: BoxFit.contain,
+          child: SizedBox(
+            height: 340,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Image.asset('assets/piggy_bank.png', fit: BoxFit.contain),
                   ),
                 ),
-              ),
-              Positioned(
-                right: 16,
-                bottom: 16,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.95),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.08),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.auto_awesome_rounded, color: Color(0xFFF06292), size: 16),
-                      SizedBox(width: 4),
-                      Text(
-                        'コレクションを見る',
-                        style: TextStyle(
-                          color: Color(0xFF4A4A4A),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                      SizedBox(width: 2),
-                      Icon(Icons.chevron_right_rounded, color: Colors.grey, size: 16),
-                    ],
+                Positioned(
+                  right: 16,
+                  bottom: 16,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.95),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 8, offset: const Offset(0, 4)),
+                      ],
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.auto_awesome_rounded, color: Color(0xFFF06292), size: 16),
+                        SizedBox(width: 4),
+                        Text('コレクションを見る', style: TextStyle(color: Color(0xFF4A4A4A), fontWeight: FontWeight.bold, fontSize: 12)),
+                        SizedBox(width: 2),
+                        Icon(Icons.chevron_right_rounded, color: Colors.grey, size: 16),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-      ),
       ),
     );
   }
