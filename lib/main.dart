@@ -1,28 +1,24 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart'; 
-import 'package:supabase_flutter/supabase_flutter.dart';
-
-
 
 import 'screens/0_login.dart';
-// 各画面のインポート
-
 import 'screens/1_home.dart';
 import 'screens/2_input.dart';
 import 'screens/4_analytics.dart';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'services/ai_service.dart';
+import 'services/db_service.dart'; // 🌟 これを追加！
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // .envファイルの読み込み
   await dotenv.load(fileName: ".env");
 
-  // Supabaseの初期化
+  // 🌟 Supabaseの初期化
   await Supabase.initialize(
     url: dotenv.env['SUPABASE_URL']!,
     anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
@@ -42,45 +38,21 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      // 🌟 ここでログイン状態を常に監視して自動で画面を切り替えます
-      home: const AuthGate(),
-    );
-  }
-}
-
-class AuthGate extends StatefulWidget {
-  const AuthGate({super.key});
-
-  @override
-  State<AuthGate> createState() => _AuthGateState();
-}
-
-class _AuthGateState extends State<AuthGate> {
-  bool _isLoading = true;
-  bool _isLoggedIn = false;
-  StreamSubscription<AuthState>? _authSubscription;
-
-  @override
-  void initState() {
-    super.initState();
-    final user = Supabase.instance.client.auth.currentUser;
-    _isLoggedIn = user != null;
-    _authSubscription = Supabase.instance.client.auth.onAuthStateChange.listen(
-      (data) {
-        final isSignedIn = data.event == AuthChangeEvent.signedIn ||
-            Supabase.instance.client.auth.currentUser != null;
-        setState(() {
-          _isLoggedIn = isSignedIn;
-          _isLoading = false;
-        });
-      },
-      // 🌟 ここで「ログインしているか？」を常に監視する仕組みに切り替えます
-      home: StreamBuilder<AuthState>(
+      home: StreamBuilder<AuthState?>(
         stream: Supabase.instance.client.auth.onAuthStateChange,
-        builder: (context, snapshot) {
+        builder: (BuildContext context, AsyncSnapshot<AuthState?> snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+
           final session = snapshot.data?.session;
-          // セッションがあればメイン画面(RootScreen)へ、なければログイン画面へ
-          return session != null ? const RootScreen() : const LoginScreen();
+          if (session == null) {
+            return LoginScreen();
+          }
+
+          return const RootScreen();
         },
       ),
     );
@@ -121,7 +93,6 @@ class _RootScreenState extends State<RootScreen> {
   int _selectedIndex = 0;
   String _savedText = '';
   int _currentCoins = 7;
-  final int _currentCoins = 128; // constは外しました
 
   void _onTabTapped(int index) {
     setState(() {
@@ -145,12 +116,8 @@ class _RootScreenState extends State<RootScreen> {
   @override
   Widget build(BuildContext context) {
     final pages = [
-      const HomeScreen(),
-      InputScreen(
-        initialText: _savedText,
-        onSave: _saveText,
-        onBack: _goBack,
-      ),
+      HomeScreen(savedNote: _savedText, currentCoins: _currentCoins),
+      InputScreen(initialText: _savedText, onSave: _saveText, onBack: _goBack),
       const AnalyticsScreen(),
     ];
 
