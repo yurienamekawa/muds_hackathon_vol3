@@ -1,8 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart'; 
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'screens/0_login.dart';
 
 import 'screens/0_login.dart';
+// 各画面のインポート
 import 'screens/1_home.dart';
 import 'screens/2_input.dart';
 import 'screens/4_analytics.dart';
@@ -16,7 +20,7 @@ void main() async {
   // .envファイルの読み込み
   await dotenv.load(fileName: ".env");
 
-  // 🌟 Supabaseの初期化
+  // Supabaseの初期化
   await Supabase.initialize(
     url: dotenv.env['SUPABASE_URL']!,
     anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
@@ -31,7 +35,6 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-
       title: 'muds_hackathon_vol3',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
@@ -68,6 +71,18 @@ class _AuthGateState extends State<AuthGate> {
           _isLoading = false;
         });
       },
+      // 🌟 ここで「ログインしているか？」を常に監視する仕組みに切り替えます
+      home: StreamBuilder<AuthState>(
+        stream: Supabase.instance.client.auth.onAuthStateChange,
+        builder: (context, snapshot) {
+          // セッション情報があればログイン済みとみなす
+          if (snapshot.hasData && snapshot.data?.session != null) {
+            return const RootScreen();
+          }
+          // なければログイン画面へ
+          return const LoginScreen();
+        },
+      ),
     );
     _isLoading = false;
   }
@@ -106,6 +121,7 @@ class _RootScreenState extends State<RootScreen> {
   int _selectedIndex = 0;
   String _savedText = '';
   int _currentCoins = 7;
+  final int _currentCoins = 128; // constは外しました
 
   void _onTabTapped(int index) {
     setState(() {
@@ -129,13 +145,14 @@ class _RootScreenState extends State<RootScreen> {
   @override
   Widget build(BuildContext context) {
     final pages = [
-      HomeScreen(savedNote: _savedText, currentCoins: _currentCoins),
+      const HomeScreen(), // 引数を削除して、const を付けます！
       InputScreen(
         initialText: _savedText,
         onSave: _saveText,
         onBack: _goBack,
       ),
       const AnalyticsScreen(),
+    
     ];
 
     return Scaffold(
@@ -147,18 +164,9 @@ class _RootScreenState extends State<RootScreen> {
         unselectedItemColor: Colors.grey,
         showUnselectedLabels: true,
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'ホーム',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.edit),
-            label: '入力',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.bar_chart),
-            label: '分析',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'ホーム'),
+          BottomNavigationBarItem(icon: Icon(Icons.edit), label: '入力'),
+          BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: '分析'),
         ],
       ),
     );
