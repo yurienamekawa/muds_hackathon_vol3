@@ -51,7 +51,7 @@ class RootScreen extends StatefulWidget {
 class _RootScreenState extends State<RootScreen> {
   int _selectedIndex = 0;
   String _savedText = '';
-  int _currentCoins = 128;
+  int _currentCoins = 7;
 
   void _onTabTapped(int index) {
     setState(() {
@@ -106,37 +106,6 @@ class _RootScreenState extends State<RootScreen> {
             label: '分析',
           ),
         ],
-      ),
-    );
-  }
-}
-
-      title: 'Gemini API Test',
-      home: Scaffold(
-        appBar: AppBar(title: const Text('AI分析 ＆ データベース保存テスト')),
-        body: Center(
-          child: ElevatedButton(
-            onPressed: () async {
-              print('🌟 処理開始！');
-              try {
-                // テスト用のメモ
-                String memo = '今日は天気が良くて、お気に入りの服を着てお出かけできたので最高の気分でした！';
-                
-                // 1. AIに分析してもらう
-                final result = await AiService.analyzeHappyMemo(memo);
-                print('✅ AI分析成功！結果：');
-                print(result); 
-                
-                // 2. その結果と元のメモをSupabaseに保存する！
-                await DbService.insertCoinData(memo, result);
-                
-              } catch (e) {
-                print('❌ エラーが発生しました：$e');
-              }
-            },
-            child: const Text('AI分析 ＆ DBに保存する！'),
-          ),
-        ),
       ),
     );
   }

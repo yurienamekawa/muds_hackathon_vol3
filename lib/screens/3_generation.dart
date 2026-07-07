@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import '5_collection.dart';
+import '3.5_generation.dart';
 
 class GenerationScreen extends StatefulWidget {
   const GenerationScreen({super.key});
@@ -61,6 +62,21 @@ class _GenerationScreenState extends State<GenerationScreen>
     _rotationAnimation = Tween<double>(begin: 0.0, end: 6 * 3.141592653589793).animate(
       CurvedAnimation(parent: _controller, curve: const Interval(0.1, 0.9, curve: Curves.easeOutCubic)),
     );
+
+    // 演出完了後、少し待ってから自動的にトランジション画面へ遷移
+    Future.delayed(const Duration(milliseconds: 3500), () {
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PiggyBankTransitionScreen(
+              coinCategory: dummyCategory,
+              currentCoins: 7,
+            ),
+          ),
+        );
+      }
+    });
   }
 
   @override
@@ -171,30 +187,7 @@ class _GenerationScreenState extends State<GenerationScreen>
                     ],
                   ),
                 ),
-                const SizedBox(height: 40),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF5A79),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 14,
-                      horizontal: 24,
-                    ),
-                  ),
-                  child: const Text(
-                    'ホームに戻る',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
+                const SizedBox(height: 20),
               ],
             ),
           ),
