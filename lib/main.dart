@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart'; 
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'screens/0_login.dart';
 
 // 各画面のインポート
 import 'screens/1_home.dart';
@@ -33,7 +34,18 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const RootScreen(),
+      // 🌟 ここで「ログインしているか？」を常に監視する仕組みに切り替えます
+      home: StreamBuilder<AuthState>(
+        stream: Supabase.instance.client.auth.onAuthStateChange,
+        builder: (context, snapshot) {
+          // セッション情報があればログイン済みとみなす
+          if (snapshot.hasData && snapshot.data?.session != null) {
+            return const RootScreen();
+          }
+          // なければログイン画面へ
+          return const LoginScreen();
+        },
+      ),
     );
   }
 }
