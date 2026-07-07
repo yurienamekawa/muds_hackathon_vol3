@@ -20,22 +20,22 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   late String _topCategory;
 
   static const Map<String, String> _scoreLabels = {
-    'tsunagari': 'つながり度',
-    'wakuwaku': 'ワクワク度',
-    'kansha': '感謝度',
-    'tassei': '達成度',
-    'iyashi': 'リラックス度',
+    'score_tsunagari': 'つながり度',
+    'score_wakuwaku': 'ワクワク度',
+    'score_kansha': '感謝度',
+    'score_tassei': '達成度',
+    'score_iyashi': 'リラックス度',
   };
 
   @override
   void initState() {
     super.initState();
     _averageScores = {
-      'tsunagari': 3.0,
-      'wakuwaku': 3.0,
-      'kansha': 3.0,
-      'tassei': 3.0,
-      'iyashi': 3.0,
+      'score_tsunagari': 3.0,
+      'score_wakuwaku': 3.0,
+      'score_kansha': 3.0,
+      'score_tassei': 3.0,
+      'score_iyashi': 3.0,
     };
     _dailyCounts = {};
     _topCategory = '日常・景色';
@@ -124,18 +124,18 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
   Map<String, double> _buildAverageScores(List<Map<String, dynamic>> records) {
     final sums = {
-      'tsunagari': 0.0,
-      'wakuwaku': 0.0,
-      'kansha': 0.0,
-      'tassei': 0.0,
-      'iyashi': 0.0,
+      'score_tsunagari': 0.0,
+      'score_wakuwaku': 0.0,
+      'score_kansha': 0.0,
+      'score_tassei': 0.0,
+      'score_iyashi': 0.0,
     };
     final counts = {
-      'tsunagari': 0,
-      'wakuwaku': 0,
-      'kansha': 0,
-      'tassei': 0,
-      'iyashi': 0,
+      'score_tsunagari': 0,
+      'score_wakuwaku': 0,
+      'score_kansha': 0,
+      'score_tassei': 0,
+      'score_iyashi': 0,
     };
     for (final record in records) {
       for (final key in sums.keys) {
@@ -191,6 +191,18 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     final suggestion =
         suggestions[topCategory] ?? 'これまでの幸せを振り返って、今後も続けていきましょう。';
     return '最近は「$topCategory」に幸せを感じています。$suggestion';
+  }
+
+  String _buildRadarSummary() {
+    if (_averageScores.isEmpty) {
+      return 'まだ分析できる記録がありません。';
+    }
+    final sorted = _averageScores.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final best = sorted.first;
+    final label = _scoreLabels[best.key] ?? best.key;
+    final rounded = best.value.toStringAsFixed(1);
+    return 'あなたの一番高い項目は「$label」で、平均は $rounded です。';
   }
 
   @override
@@ -337,6 +349,15 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               width: double.infinity,
               height: 320,
               child: RadarChart(values: _averageScores, labels: _scoreLabels),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              _buildRadarSummary(),
+              style: const TextStyle(
+                fontSize: 14,
+                color: Color(0xFF4A4A4A),
+                height: 1.6,
+              ),
             ),
           ],
         ),
@@ -647,9 +668,10 @@ class _RadarChartPainter extends CustomPainter {
     for (final entry in values.entries) {
       final label = labels[entry.key] ?? entry.key;
       final angle = angleStep * index - math.pi / 2;
+      final labelRadius = radius + 46;
       final labelPoint = Offset(
-        center.dx + (radius + 26) * math.cos(angle),
-        center.dy + (radius + 26) * math.sin(angle),
+        center.dx + labelRadius * math.cos(angle),
+        center.dy + labelRadius * math.sin(angle),
       );
       final textPainter = TextPainter(
         text: TextSpan(
@@ -658,12 +680,21 @@ class _RadarChartPainter extends CustomPainter {
         ),
         textAlign: TextAlign.center,
         textDirection: TextDirection.ltr,
-      )..layout(maxWidth: 80);
+      )..layout(maxWidth: 72);
+      final cosAngle = math.cos(angle);
+      final sinAngle = math.sin(angle);
+      final dx = cosAngle > 0.5
+          ? labelPoint.dx
+          : cosAngle < -0.5
+          ? labelPoint.dx - textPainter.width
+          : labelPoint.dx - textPainter.width / 2;
+      final dy = sinAngle > 0.5
+          ? labelPoint.dy
+          : sinAngle < -0.5
+          ? labelPoint.dy - textPainter.height
+          : labelPoint.dy - textPainter.height / 2;
       canvas.save();
-      canvas.translate(
-        labelPoint.dx - textPainter.width / 2,
-        labelPoint.dy - textPainter.height / 2,
-      );
+      canvas.translate(dx, dy);
       textPainter.paint(canvas, Offset.zero);
       canvas.restore();
       index += 1;
