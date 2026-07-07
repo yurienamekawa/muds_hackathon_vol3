@@ -1,12 +1,20 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart'; 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-// 各画面のインポート（ファイルの場所が正しければこのままです）
+
+
 import 'screens/0_login.dart';
+// 各画面のインポート
+
 import 'screens/1_home.dart';
 import 'screens/2_input.dart';
 import 'screens/4_analytics.dart';
+
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,6 +43,38 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
       // 🌟 ここでログイン状態を常に監視して自動で画面を切り替えます
+      home: const AuthGate(),
+    );
+  }
+}
+
+class AuthGate extends StatefulWidget {
+  const AuthGate({super.key});
+
+  @override
+  State<AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<AuthGate> {
+  bool _isLoading = true;
+  bool _isLoggedIn = false;
+  StreamSubscription<AuthState>? _authSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    final user = Supabase.instance.client.auth.currentUser;
+    _isLoggedIn = user != null;
+    _authSubscription = Supabase.instance.client.auth.onAuthStateChange.listen(
+      (data) {
+        final isSignedIn = data.event == AuthChangeEvent.signedIn ||
+            Supabase.instance.client.auth.currentUser != null;
+        setState(() {
+          _isLoggedIn = isSignedIn;
+          _isLoading = false;
+        });
+      },
+      // 🌟 ここで「ログインしているか？」を常に監視する仕組みに切り替えます
       home: StreamBuilder<AuthState>(
         stream: Supabase.instance.client.auth.onAuthStateChange,
         builder: (context, snapshot) {
@@ -44,6 +84,29 @@ class MyApp extends StatelessWidget {
         },
       ),
     );
+    _isLoading = false;
+  }
+
+  @override
+  void dispose() {
+    _authSubscription?.cancel();
+    super.dispose();
+  }
+
+  void _onLoginSuccess() {
+    setState(() {
+      _isLoggedIn = true;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+    return _isLoggedIn ? const RootScreen() : LoginScreen(onLoginSuccess: _onLoginSuccess);
   }
 }
 
@@ -57,6 +120,8 @@ class RootScreen extends StatefulWidget {
 class _RootScreenState extends State<RootScreen> {
   int _selectedIndex = 0;
   String _savedText = '';
+  int _currentCoins = 7;
+  final int _currentCoins = 128; // constは外しました
 
   void _onTabTapped(int index) {
     setState(() {
