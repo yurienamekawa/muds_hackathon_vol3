@@ -1,13 +1,9 @@
+// ignore_for_file: file_names
+
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({
-    super.key,
-    required this.onLoginSuccess,
-  });
-
-  final VoidCallback onLoginSuccess;
   const LoginScreen({super.key});
 
   @override
@@ -17,20 +13,18 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-
-
+  bool _isSignUp = false;
   bool _isLoading = false;
   String? _errorText;
 
-  Future<void> _signIn() async {
-    widget.onLoginSuccess();
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 
-  Future<void> _signUp() async {
-    await _authenticate(signUp: true);
-  }
-
-  Future<void> _authenticate({required bool signUp}) async {
+  Future<void> _submit() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
@@ -47,7 +41,7 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      final response = signUp
+      final response = _isSignUp
           ? await Supabase.instance.client.auth.signUp(
               email: email,
               password: password,
@@ -57,69 +51,33 @@ class _LoginScreenState extends State<LoginScreen> {
               password: password,
             );
 
-      final session = response.session;
-      if (session != null) {
-        widget.onLoginSuccess();
+      if (response.session != null) {
         return;
       }
 
-      if (signUp && response.user != null && response.user!.email != null) {
+      if (_isSignUp && response.user != null && response.user!.email != null) {
         setState(() {
-          _errorText = '作成しました。ログインしてください。';
+          _errorText = '登録に成功しました。ログインしてください。';
+          _isSignUp = false;
         });
       } else {
         setState(() {
-          _errorText = signUp
+          _errorText = _isSignUp
               ? 'アカウント作成に失敗しました。すでに登録済みの可能性があります。'
               : 'ログインに失敗しました。メールアドレスとパスワードを確認してください。';
         });
       }
     } catch (e) {
       setState(() {
-        _errorText = signUp
-            ? 'アカウント作成でエラーが発生しました。もう一度試してください。'
-            : 'ログインでエラーが発生しました。もう一度試してください。';
+        _errorText = 'エラーが発生しました: $e';
       });
     } finally {
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
-  bool _isSignUp = false; // 登録モードかログインモードかを切り替えるスイッチ
-
-
-  Future<void> _submit() async {
-    final client = Supabase.instance.client;
-    try {
-      if (_isSignUp) {
-        final authResult = await client.auth.signUp(
-          email: _emailController.text,
-          password: _passwordController.text,
-        );
-        if (authResult.user != null) {
-          await client.from('users').insert({
-            'id': authResult.user!.id,
-            'user_name': _emailController.text,
-          });
-        }
-      } else {
-        await client.auth.signInWithPassword(
-          email: _emailController.text,
-          password: _passwordController.text,
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('エラー: $e')));
       }
     }
-  }
-
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
   }
 
   @override
@@ -134,10 +92,10 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 24),
-                const Text(
-                  'ログイン',
+                Text(
+                  _isSignUp ? '新規登録' : 'ログイン',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF333333),
@@ -184,7 +142,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ],
                 const SizedBox(height: 24),
                 ElevatedButton(
-                  onPressed: _isLoading ? null : _signIn,
+                  onPressed: _isLoading ? null : _submit,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFFF5A79),
                     padding: const EdgeInsets.symmetric(vertical: 16),
@@ -197,13 +155,15 @@ class _LoginScreenState extends State<LoginScreen> {
                           height: 20,
                           width: 20,
                           child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
                             strokeWidth: 2,
                           ),
                         )
-                      : const Text(
-                          'ログイン',
-                          style: TextStyle(
+                      : Text(
+                          _isSignUp ? '登録する' : 'ログインする',
+                          style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
                           ),
@@ -211,16 +171,23 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 12),
                 OutlinedButton(
-                  onPressed: _isLoading ? null : _signUp,
+                  onPressed: _isLoading
+                      ? null
+                      : () {
+                          setState(() {
+                            _isSignUp = !_isSignUp;
+                            _errorText = null;
+                          });
+                        },
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
                   ),
-                  child: const Text(
-                    '新規作成',
-                    style: TextStyle(
+                  child: Text(
+                    _isSignUp ? 'ログインへ' : '新規登録へ',
+                    style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),
@@ -229,23 +196,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(_isSignUp ? '新規登録' : 'ログイン')),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            TextField(controller: _emailController, decoration: const InputDecoration(labelText: 'Email')),
-            TextField(controller: _passwordController, decoration: const InputDecoration(labelText: 'Password'), obscureText: true),
-            ElevatedButton(onPressed: _submit, child: Text(_isSignUp ? '登録' : 'ログイン')),
-            TextButton(onPressed: () => setState(() => _isSignUp = !_isSignUp), child: Text(_isSignUp ? 'ログインへ' : '新規登録へ')),
-          ],
         ),
       ),
     );

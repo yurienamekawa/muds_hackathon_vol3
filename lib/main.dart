@@ -1,24 +1,21 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'screens/0_login.dart';
 import 'screens/1_home.dart';
 import 'screens/2_input.dart';
 import 'screens/4_analytics.dart';
-
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'services/ai_service.dart';
-import 'services/db_service.dart'; // 🌟 これを追加！
+import 'services/db_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // .envファイルの読み込み
-  await dotenv.load(fileName: ".env");
+  await dotenv.load(fileName: '.env');
 
-  // 🌟 Supabaseの初期化
   await Supabase.initialize(
     url: dotenv.env['SUPABASE_URL']!,
     anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
@@ -27,8 +24,37 @@ void main() async {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  bool _isLoading = true;
+  bool _isLoggedIn = false;
+  StreamSubscription? _authSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    final client = Supabase.instance.client;
+    _isLoggedIn = client.auth.currentUser != null;
+    _isLoading = false;
+    _authSubscription = client.auth.onAuthStateChange.listen((event) {
+      if (!mounted) return;
+      setState(() {
+        _isLoggedIn = event.session != null;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _authSubscription?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,47 +64,10 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: StreamBuilder<AuthState?>(
-        stream: Supabase.instance.client.auth.onAuthStateChange,
-        builder: (BuildContext context, AsyncSnapshot<AuthState?> snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
-            );
-          }
-
-          final session = snapshot.data?.session;
-          if (session == null) {
-            return LoginScreen();
-          }
-
-          return const RootScreen();
-        },
-      ),
+      home: _isLoading
+          ? const Scaffold(body: Center(child: CircularProgressIndicator()))
+          : (_isLoggedIn ? const RootScreen() : const LoginScreen()),
     );
-    _isLoading = false;
-  }
-
-  @override
-  void dispose() {
-    _authSubscription?.cancel();
-    super.dispose();
-  }
-
-  void _onLoginSuccess() {
-    setState(() {
-      _isLoggedIn = true;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-    return _isLoggedIn ? const RootScreen() : LoginScreen(onLoginSuccess: _onLoginSuccess);
   }
 }
 
@@ -129,7 +118,7 @@ class _RootScreenState extends State<RootScreen> {
         selectedItemColor: const Color(0xFFFF5A79),
         unselectedItemColor: Colors.grey,
         showUnselectedLabels: true,
-        type: BottomNavigationBarType.fixed, // 3つ以上の場合に必要になることがあります
+        type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'ホーム'),
           BottomNavigationBarItem(icon: Icon(Icons.edit), label: '入力'),
