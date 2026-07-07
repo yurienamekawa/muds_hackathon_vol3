@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart'; 
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'screens/0_login.dart';
 
-// 各画面のインポート
+// 各画面のインポート（ファイルの場所が正しければこのままです）
+import 'screens/0_login.dart';
 import 'screens/1_home.dart';
 import 'screens/2_input.dart';
 import 'screens/4_analytics.dart';
@@ -34,16 +34,13 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      // 🌟 ここで「ログインしているか？」を常に監視する仕組みに切り替えます
+      // 🌟 ここでログイン状態を常に監視して自動で画面を切り替えます
       home: StreamBuilder<AuthState>(
         stream: Supabase.instance.client.auth.onAuthStateChange,
         builder: (context, snapshot) {
-          // セッション情報があればログイン済みとみなす
-          if (snapshot.hasData && snapshot.data?.session != null) {
-            return const RootScreen();
-          }
-          // なければログイン画面へ
-          return const LoginScreen();
+          final session = snapshot.data?.session;
+          // セッションがあればメイン画面(RootScreen)へ、なければログイン画面へ
+          return session != null ? const RootScreen() : const LoginScreen();
         },
       ),
     );
@@ -60,7 +57,6 @@ class RootScreen extends StatefulWidget {
 class _RootScreenState extends State<RootScreen> {
   int _selectedIndex = 0;
   String _savedText = '';
-  final int _currentCoins = 128; // constは外しました
 
   void _onTabTapped(int index) {
     setState(() {
@@ -84,14 +80,13 @@ class _RootScreenState extends State<RootScreen> {
   @override
   Widget build(BuildContext context) {
     final pages = [
-      const HomeScreen(), // 引数を削除して、const を付けます！
+      const HomeScreen(),
       InputScreen(
         initialText: _savedText,
         onSave: _saveText,
         onBack: _goBack,
       ),
       const AnalyticsScreen(),
-    
     ];
 
     return Scaffold(
@@ -102,6 +97,7 @@ class _RootScreenState extends State<RootScreen> {
         selectedItemColor: const Color(0xFFFF5A79),
         unselectedItemColor: Colors.grey,
         showUnselectedLabels: true,
+        type: BottomNavigationBarType.fixed, // 3つ以上の場合に必要になることがあります
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'ホーム'),
           BottomNavigationBarItem(icon: Icon(Icons.edit), label: '入力'),
