@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '5_collection.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -132,7 +131,6 @@ class PiggyBankCard extends StatelessWidget {
   final int currentCoins;
   final Widget? fallingCoin;
   final bool showCollectionButton;
-  const PiggyBankCard({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -175,21 +173,6 @@ class PiggyBankCard extends StatelessWidget {
                       horizontal: 14,
                       vertical: 8,
                     ),
-            height: 340,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Image.asset('assets/piggy_bank.png', fit: BoxFit.contain),
-                  ),
-                ),
-                Positioned(
-                  right: 16,
-                  bottom: 16,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.95),
                       borderRadius: BorderRadius.circular(20),
@@ -199,7 +182,6 @@ class PiggyBankCard extends StatelessWidget {
                           blurRadius: 8,
                           offset: const Offset(0, 4),
                         ),
-                        BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 8, offset: const Offset(0, 4)),
                       ],
                     ),
                     child: const Row(
@@ -215,7 +197,6 @@ class PiggyBankCard extends StatelessWidget {
                             fontSize: 12,
                           ),
                         ),
-                        Text('コレクションを見る', style: TextStyle(color: Color(0xFF4A4A4A), fontWeight: FontWeight.bold, fontSize: 12)),
                         SizedBox(width: 2),
                         Icon(Icons.chevron_right_rounded, color: Colors.grey, size: 16),
                       ],
@@ -1213,5 +1194,4 @@ class PiggyBankSlotPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
 }
