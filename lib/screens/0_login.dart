@@ -51,7 +51,18 @@ class _LoginScreenState extends State<LoginScreen> {
               password: password,
             );
 
+      // デバッグ: Supabaseのレスポンスをコンソールに出力
+      // 実行端末のログ（flutter run）で確認してください。
+      // ignore: avoid_print
+      print('Supabase auth response: $response');
+
       if (response.session != null) {
+        // セッションが取得できればログイン成功
+        if (mounted) {
+          setState(() {
+            _errorText = null;
+          });
+        }
         return;
       }
 
