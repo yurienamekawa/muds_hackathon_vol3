@@ -2,20 +2,62 @@
 
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'dart:math' as math;
 import '5_collection.dart';
+import 'dart:math' as math; // 必要であれば
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key, this.savedNote = '', this.currentCoins = 128});
-
+// lib/screens/1_home.dart 内の HomeScreen クラスを修正
+class HomeScreen extends StatefulWidget {
+  // 🌟 ここで引数を受け取れるようにします
   final String savedNote;
   final int currentCoins;
+
+  const HomeScreen({
+    super.key, 
+    this.savedNote = '', 
+    this.currentCoins = 0,
+  });
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  int _coinCount = 0;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCoinCount();
+  }
+
+  Future<void> _fetchCoinCount() async {
+    try {
+      final supabase = Supabase.instance.client;
+      final userId = supabase.auth.currentUser?.id;
+      if (userId == null) return;
+
+      final data = await supabase
+          .from('happy_coins')
+          .select('id')
+          .eq('user_id', userId);
+
+      if (mounted) {
+        setState(() {
+          _coinCount = (data as List).length;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('コイン数取得エラー: $e');
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFDF7EE),
-      // 🌟 ここにログアウトボタン付きの AppBar を追加しました
       appBar: AppBar(
         backgroundColor: const Color(0xFFFDF7EE),
         elevation: 0,
@@ -31,96 +73,21 @@ class HomeScreen extends StatelessWidget {
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const SizedBox(height: 20), // 少し調整
-              const Text(
-                '貯まったコイン',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF4A4A4A),
-                ),
-              ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
+              const Text('貯まったコイン', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF4A4A4A))),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
-                    Icons.monetization_on,
-                    color: Colors.amber,
-                    size: 40,
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    '$currentCoins',
-                    style: const TextStyle(
-                      fontSize: 48,
-                      fontWeight: FontWeight.w900,
-                      color: Color(0xFF2B2B2B),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Text(
-                    '枚',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF2B2B2B),
-                    ),
-                  ),
+                  const Icon(Icons.monetization_on, color: Colors.amber, size: 40),
+                  _isLoading
+                      ? const CircularProgressIndicator()
+                      : Text('$_coinCount', style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w900)),
+                  const Text('枚', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                 ],
               ),
               const SizedBox(height: 30),
-              PiggyBankCard(currentCoins: currentCoins),
-              const SizedBox(height: 30),
-              Container(
-                width: double.infinity,
-                margin: const EdgeInsets.symmetric(horizontal: 24),
-                padding: const EdgeInsets.symmetric(
-                  vertical: 20,
-                  horizontal: 16,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: const Column(
-                  children: [
-                    Text(
-                      '今日もポジティブを',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF4A4A4A),
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          '貯めていこう！',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF4A4A4A),
-                          ),
-                        ),
-                        Text(' 💗', style: TextStyle(fontSize: 18)),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 40),
+              PiggyBankCard(currentCoins: _coinCount), // あやかさんの描画用カード
             ],
           ),
         ),
@@ -128,6 +95,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 }
+
 
 class PiggyBankCard extends StatelessWidget {
   const PiggyBankCard({

@@ -41,31 +41,34 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      final response = _isSignUp
-          ? await Supabase.instance.client.auth.signUp(
-              email: email,
-              password: password,
-            )
-          : await Supabase.instance.client.auth.signInWithPassword(
-              email: email,
-              password: password,
-            );
+      final client = Supabase.instance.client;
 
-      if (response.session != null) {
-        return;
-      }
+      if (_isSignUp) {
+        // 新規登録を実行
+        final response = await client.auth.signUp(
+          email: email,
+          password: password,
+        );
 
-      if (_isSignUp && response.user != null && response.user!.email != null) {
+        // 登録成功かつユーザー情報が取得できたら、usersテーブルにも行を追加
+        if (response.user != null) {
+          await client.from('users').insert({
+            'id': response.user!.id,
+            'user_name': email,
+          });
+        }
+
         setState(() {
-          _errorText = '登録に成功しました。ログインしてください。';
+          _errorText = '登録完了！ログインしてください。';
           _isSignUp = false;
         });
       } else {
-        setState(() {
-          _errorText = _isSignUp
-              ? 'アカウント作成に失敗しました。すでに登録済みの可能性があります。'
-              : 'ログインに失敗しました。メールアドレスとパスワードを確認してください。';
-        });
+        // ログインを実行
+        await client.auth.signInWithPassword(
+          email: email,
+          password: password,
+        );
+        // ログイン成功時は、main.dart の StreamBuilder が自動でホーム画面へ切り替えます
       }
     } catch (e) {
       setState(() {
@@ -155,9 +158,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           height: 20,
                           width: 20,
                           child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                             strokeWidth: 2,
                           ),
                         )
@@ -166,6 +167,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
+                            color: Colors.white,
                           ),
                         ),
                 ),
