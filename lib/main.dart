@@ -60,6 +60,7 @@ class RootScreen extends StatefulWidget {
 class _RootScreenState extends State<RootScreen> {
   int _selectedIndex = 0;
   String _savedText = '';
+  int _currentCoins = 7;
   final int _currentCoins = 128; // constは外しました
 
   void _onTabTapped(int index) {
