@@ -119,13 +119,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
               ),
             ),
             SizedBox(height: 4),
-            Text(
-              '(7 / 9)',
-              style: TextStyle(
-                color: Colors.grey,
-                fontSize: 12,
-              ),
-            ),
+            Text('(7 / 9)', style: TextStyle(color: Colors.grey, fontSize: 12)),
           ],
         ),
         centerTitle: true,
@@ -134,7 +128,10 @@ class _CollectionScreenState extends State<CollectionScreen> {
         children: [
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 8.0,
+              ),
               child: GridView.builder(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 3,
@@ -156,11 +153,15 @@ class _CollectionScreenState extends State<CollectionScreen> {
                     },
                     child: Container(
                       decoration: BoxDecoration(
-                        color: isAcquired ? Colors.white : const Color(0xFFF8F8F8),
+                        color: isAcquired
+                            ? Colors.white
+                            : const Color(0xFFF8F8F8),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: isSelected
-                              ? (isAcquired ? category['color'].withOpacity(0.6) : Colors.grey.withOpacity(0.4))
+                              ? (isAcquired
+                                    ? category['color'].withOpacity(0.6)
+                                    : Colors.grey.withOpacity(0.4))
                               : Colors.transparent,
                           width: 2,
                         ),
@@ -182,13 +183,17 @@ class _CollectionScreenState extends State<CollectionScreen> {
                           ),
                           const SizedBox(height: 10),
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 4.0,
+                            ),
                             child: Text(
                               isAcquired ? category['title'] : '未獲得',
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
-                                color: isAcquired ? const Color(0xFF4A4A4A) : Colors.grey,
+                                color: isAcquired
+                                    ? const Color(0xFF4A4A4A)
+                                    : Colors.grey,
                               ),
                               textAlign: TextAlign.center,
                               maxLines: 1,
@@ -198,7 +203,9 @@ class _CollectionScreenState extends State<CollectionScreen> {
                           const SizedBox(height: 2),
                           if (isAcquired)
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4.0,
+                              ),
                               child: Text(
                                 category['date'], // Displaying date instead of subtitle like the new mockup
                                 style: const TextStyle(
@@ -228,7 +235,9 @@ class _CollectionScreenState extends State<CollectionScreen> {
               color: Colors.white,
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: isSelectedAcquired ? selectedCategory['color'].withOpacity(0.3) : Colors.grey.withOpacity(0.3),
+                color: isSelectedAcquired
+                    ? selectedCategory['color'].withOpacity(0.3)
+                    : Colors.grey.withOpacity(0.3),
                 width: 1.5,
               ),
               boxShadow: [
@@ -253,11 +262,15 @@ class _CollectionScreenState extends State<CollectionScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        isSelectedAcquired ? selectedCategory['title'] : '未獲得のメダル',
+                        isSelectedAcquired
+                            ? selectedCategory['title']
+                            : '未獲得のメダル',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: isSelectedAcquired ? const Color(0xFF4A4A4A) : Colors.grey,
+                          color: isSelectedAcquired
+                              ? const Color(0xFF4A4A4A)
+                              : Colors.grey,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -270,7 +283,9 @@ class _CollectionScreenState extends State<CollectionScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        isSelectedAcquired ? selectedCategory['detail'] : 'このメダルはまだ獲得していません。日常の出来事を記録して集めよう！',
+                        isSelectedAcquired
+                            ? selectedCategory['detail']
+                            : 'このメダルはまだ獲得していません。日常の出来事を記録して集めよう！',
                         style: const TextStyle(
                           fontSize: 14,
                           color: Color(0xFF6A6A6A),
@@ -325,7 +340,9 @@ class CoinWidget extends StatelessWidget {
       );
     }
 
-    final Color baseColor = category['color'];
+    final Color baseColor = category['color'] is Color
+        ? category['color'] as Color
+        : const Color(0xFF64B5F6);
     final double grooveSize = size * 0.85;
     final double innerSize = size * 0.76;
     final double iconSize = size * 0.45;

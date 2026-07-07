@@ -23,20 +23,68 @@ class _GenerationScreenState extends State<GenerationScreen>
 
   late final Map<String, dynamic> dummyCategory;
 
+  static const Map<String, IconData> _coinIconMap = {
+    'heart_pink': Icons.favorite,
+    'star_blue': Icons.star,
+    'star_yellow': Icons.star,
+    'leaf_green': Icons.eco,
+    'star_purple': Icons.star,
+    'flower_orange': Icons.local_florist,
+    'flower_pink': Icons.local_florist,
+    'note_blue': Icons.music_note,
+  };
+
+  static const Map<String, Color> _coinColorMap = {
+    'heart_pink': Color(0xFFF06292),
+    'star_blue': Color(0xFF64B5F6),
+    'star_yellow': Color(0xFFFFEB3B),
+    'leaf_green': Color(0xFF81C784),
+    'star_purple': Color(0xFFBA68C8),
+    'flower_orange': Color(0xFFFF8A65),
+    'flower_pink': Color(0xFFF48FB1),
+    'note_blue': Color(0xFF4FC3F7),
+  };
+
+  Color _resolveColor(dynamic colorValue) {
+    if (colorValue is Color) return colorValue;
+    if (colorValue is int) return Color(colorValue);
+    if (colorValue is String) {
+      final cleaned = colorValue.replaceAll('#', '').trim();
+      if (cleaned.length == 6) {
+        return Color(int.parse('0xFF$cleaned'));
+      }
+      if (cleaned.length == 8) {
+        return Color(int.parse('0x$cleaned'));
+      }
+    }
+    return const Color(0xFF64B5F6);
+  }
+
+  Map<String, dynamic> _buildCategory(Map<String, dynamic>? aiResult) {
+    final category = (aiResult?['category'] as String?)?.trim();
+    final title = (aiResult?['short_title'] as String?)?.trim();
+    final detail = (aiResult?['ai_comment'] as String?)?.trim();
+    final coinType =
+        (aiResult?['coin_type'] as String?)?.trim()?.toLowerCase() ??
+        'heart_pink';
+
+    return {
+      'title': title?.isNotEmpty == true
+          ? title
+          : (category?.isNotEmpty == true ? category : '日常・景色'),
+      'subtitle': category?.isNotEmpty == true ? category : '日常・景色',
+      'icon': _coinIconMap[coinType] ?? Icons.wb_sunny_rounded,
+      'color': _resolveColor(_coinColorMap[coinType]),
+      'date': DateTime.now().toString().split(' ').first,
+      'detail': detail?.isNotEmpty == true ? detail : 'あなたのポジティブな瞬間がコインになりました。',
+      'isAcquired': true,
+    };
+  }
+
   @override
   void initState() {
     super.initState();
-    dummyCategory =
-        widget.aiResult ??
-        {
-          'title': '日常・景色',
-          'subtitle': '青空、散歩など',
-          'icon': Icons.wb_sunny_rounded,
-          'color': const Color(0xFF64B5F6), // Blue color
-          'date': '2024.07.20',
-          'detail': '帰り道に見上げた青空がすごく綺麗でリフレッシュできた。',
-          'isAcquired': true,
-        };
+    dummyCategory = _buildCategory(widget.aiResult);
 
     _controller = AnimationController(
       vsync: this,
@@ -112,7 +160,9 @@ class _GenerationScreenState extends State<GenerationScreen>
             child: MagicalBackgroundEffect(
               introController: _controller,
               loopController: _loopController,
-              baseColor: dummyCategory['color'] as Color,
+              baseColor: dummyCategory['color'] is Color
+                  ? dummyCategory['color'] as Color
+                  : const Color(0xFF64B5F6),
             ),
           ),
           // Content
