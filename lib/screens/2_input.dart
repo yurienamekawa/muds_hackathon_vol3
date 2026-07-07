@@ -1,5 +1,5 @@
 // ignore_for_file: file_names
-
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
 import '../services/ai_service.dart';
 import '../services/db_service.dart';
@@ -52,13 +52,22 @@ class _InputScreenState extends State<InputScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // 1. AI分析
+      // 🌟 ここを修正：currentUser?.id ではなく currentSession?.user.id を使うか、
+      // より確実に auth.currentUser を参照する方法に変えます
+      final user = Supabase.instance.client.auth.currentUser;
+      
+      if (user == null) throw Exception('ログインしていません');
+      final userId = user.id; // これでエラーは消えるはずです！
+
+      // 2. AI分析
       final aiData = await AiService.analyzeHappyMemo(_controller.text);
       
-      // 2. DB保存
-      await DbService.insertCoinData(_controller.text, aiData);
+      // 3. DB保存
+      await DbService.insertCoinData(
+        _controller.text, 
+        aiData, 
+      );
 
-      // 3. 成功したら画面遷移（aiDataを渡す！）
       widget.onSave(_controller.text);
       if (mounted) {
         Navigator.of(context).push(
