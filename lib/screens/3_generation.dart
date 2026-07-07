@@ -103,92 +103,74 @@ class _GenerationScreenState extends State<GenerationScreen>
           // Content
           SafeArea(
             child: SingleChildScrollView(
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text(
-                  '分析中...',
-                  style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF3B3B3B),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                const Text(
-                  'AIがあなたのポジティブを\nコインに変換中です ✨',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Color(0xFF5A5A5A),
-                    height: 1.6,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                SizedBox(
-                  height: 480,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      // The Coin (Animated)
-                      AnimatedBuilder(
-                        animation: _controller,
-                        builder: (context, child) {
-                          return Transform.translate(
-                            offset: Offset(0, _slideAnimation.value),
-                            child: Opacity(
-                              opacity: _coinOpacityAnimation.value,
-                              child: Transform(
-                                alignment: Alignment.center,
-                                transform: Matrix4.identity()
-                                  ..setEntry(3, 2, 0.001) // perspective
-                                  ..rotateY(_rotationAnimation.value) // 3D spin
-                                  ..scale(_scaleAnimation.value), // scale up
-                                child: child,
-                              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                child: Column(
+                  children: [
+                    const Text('分析完了！', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFF3B3B3B))),
+                    const SizedBox(height: 14),
+                    const Text('AIがあなたの出来事を\nコインに変換しました ✨', textAlign: TextAlign.center, style: TextStyle(fontSize: 16, color: Color(0xFF5A5A5A), height: 1.6)),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      height: 480,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          AnimatedBuilder(
+                            animation: _controller,
+                            builder: (context, child) {
+                              return Transform.translate(
+                                offset: Offset(0, _slideAnimation.value),
+                                child: Opacity(
+                                  opacity: _coinOpacityAnimation.value,
+                                  child: Transform(
+                                    alignment: Alignment.center,
+                                    transform: Matrix4.identity()
+                                      ..setEntry(3, 2, 0.001)
+                                      ..rotateY(_rotationAnimation.value)
+                                      ..scale(_scaleAnimation.value),
+                                    child: child,
+                                  ),
+                                ),
+                              );
+                            },
+                            child: CoinWidget(
+                              category: _displayData,
+                              isAcquired: true,
+                              size: 180,
                             ),
-                          );
-                        },
-                        child: CoinWidget(
-                          category: dummyCategory,
-                          isAcquired: true,
-                          size: 180,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 10),
-                FadeTransition(
-                  opacity: _opacityAnimation,
-                  child: Column(
-                    children: [
-                      const Text(
-                        '素敵なコインが生まれました！',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF4A4A4A),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'ポジティブな気持ちがコインになって貯まります。',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF7A7A7A),
-                          height: 1.6,
-                        ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(height: 20),
               ],
+                    ),
+                    FadeTransition(
+                      opacity: _opacityAnimation,
+                      child: Column(
+                        children: [
+                          Text(_displayData['title'], style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF4A4A4A))),
+                          const SizedBox(height: 8),
+                          Text(_displayData['detail'], textAlign: TextAlign.center, style: const TextStyle(fontSize: 14, color: Color(0xFF7A7A7A), height: 1.6)),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+                    ElevatedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF5A79),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
+                      ),
+                      child: const Text('ホームに戻る', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ),
