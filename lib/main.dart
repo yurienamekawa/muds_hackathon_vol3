@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'screens/0_login.dart';
@@ -54,6 +56,29 @@ class MyApp extends StatelessWidget {
         },
       ),
     );
+    _isLoading = false;
+  }
+
+  @override
+  void dispose() {
+    _authSubscription?.cancel();
+    super.dispose();
+  }
+
+  void _onLoginSuccess() {
+    setState(() {
+      _isLoggedIn = true;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+    return _isLoggedIn ? const RootScreen() : LoginScreen(onLoginSuccess: _onLoginSuccess);
   }
 }
 
@@ -104,6 +129,7 @@ class _RootScreenState extends State<RootScreen> {
         selectedItemColor: const Color(0xFFFF5A79),
         unselectedItemColor: Colors.grey,
         showUnselectedLabels: true,
+        type: BottomNavigationBarType.fixed, // 3つ以上の場合に必要になることがあります
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'ホーム'),
           BottomNavigationBarItem(icon: Icon(Icons.edit), label: '入力'),

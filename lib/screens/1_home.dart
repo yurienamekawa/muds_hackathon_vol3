@@ -18,12 +18,25 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFDF7EE),
+      // 🌟 ここにログアウトボタン付きの AppBar を追加しました
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFFDF7EE),
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout, color: Color(0xFF4A4A4A)),
+            onPressed: () async {
+              await Supabase.instance.client.auth.signOut();
+            },
+          ),
+        ],
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const SizedBox(height: 40),
+              const SizedBox(height: 20), // 少し調整
               const Text(
                 '貯まったコイン',
                 style: TextStyle(
