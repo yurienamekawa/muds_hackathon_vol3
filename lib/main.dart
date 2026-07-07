@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 
+import 'screens/0_login.dart';
 import 'screens/1_home.dart';
 import 'screens/2_input.dart';
 import 'screens/4_analytics.dart';
 
-import 'package:flutter_dotenv/flutter_dotenv.dart'; 
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'services/ai_service.dart';
 import 'services/db_service.dart'; // 🌟 これを追加！
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // .envファイルの読み込み
   await dotenv.load(fileName: ".env");
 
@@ -30,13 +31,28 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-
       title: 'muds_hackathon_vol3',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const RootScreen(),
+      home: StreamBuilder<AuthState?>(
+        stream: Supabase.instance.client.auth.onAuthStateChange,
+        builder: (BuildContext context, AsyncSnapshot<AuthState?> snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+
+          final session = snapshot.data?.session;
+          if (session == null) {
+            return LoginScreen();
+          }
+
+          return const RootScreen();
+        },
+      ),
     );
   }
 }
@@ -76,11 +92,7 @@ class _RootScreenState extends State<RootScreen> {
   Widget build(BuildContext context) {
     final pages = [
       HomeScreen(savedNote: _savedText, currentCoins: _currentCoins),
-      InputScreen(
-        initialText: _savedText,
-        onSave: _saveText,
-        onBack: _goBack,
-      ),
+      InputScreen(initialText: _savedText, onSave: _saveText, onBack: _goBack),
       const AnalyticsScreen(),
     ];
 
@@ -93,18 +105,9 @@ class _RootScreenState extends State<RootScreen> {
         unselectedItemColor: Colors.grey,
         showUnselectedLabels: true,
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'ホーム',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.edit),
-            label: '入力',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.bar_chart),
-            label: '分析',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'ホーム'),
+          BottomNavigationBarItem(icon: Icon(Icons.edit), label: '入力'),
+          BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: '分析'),
         ],
       ),
     );

@@ -4,7 +4,8 @@ import '5_collection.dart';
 import '3.5_generation.dart';
 
 class GenerationScreen extends StatefulWidget {
-  const GenerationScreen({super.key});
+  final Map<String, dynamic>? aiResult;
+  const GenerationScreen({super.key, this.aiResult});
 
   @override
   State<GenerationScreen> createState() => _GenerationScreenState();
@@ -20,19 +21,23 @@ class _GenerationScreenState extends State<GenerationScreen>
   late final Animation<double> _rotationAnimation;
   late final Animation<double> _coinOpacityAnimation;
 
-  final Map<String, dynamic> dummyCategory = {
-    'title': '日常・景色',
-    'subtitle': '青空、散歩など',
-    'icon': Icons.wb_sunny_rounded,
-    'color': const Color(0xFF64B5F6), // Blue color
-    'date': '2024.07.20',
-    'detail': '帰り道に見上げた青空がすごく綺麗でリフレッシュできた。',
-    'isAcquired': true,
-  };
+  late final Map<String, dynamic> dummyCategory;
 
   @override
   void initState() {
     super.initState();
+    dummyCategory =
+        widget.aiResult ??
+        {
+          'title': '日常・景色',
+          'subtitle': '青空、散歩など',
+          'icon': Icons.wb_sunny_rounded,
+          'color': const Color(0xFF64B5F6), // Blue color
+          'date': '2024.07.20',
+          'detail': '帰り道に見上げた青空がすごく綺麗でリフレッシュできた。',
+          'isAcquired': true,
+        };
+
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2200),
@@ -44,7 +49,10 @@ class _GenerationScreenState extends State<GenerationScreen>
     )..repeat();
 
     _scaleAnimation = Tween<double>(begin: 0.2, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.2, 0.7, curve: Curves.easeOutBack)),
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.2, 0.7, curve: Curves.easeOutBack),
+      ),
     );
 
     _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
@@ -56,12 +64,19 @@ class _GenerationScreenState extends State<GenerationScreen>
     );
 
     _slideAnimation = Tween<double>(begin: 20.0, end: -20.0).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.2, 0.8, curve: Curves.easeInOutSine)),
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.2, 0.8, curve: Curves.easeInOutSine),
+      ),
     );
 
-    _rotationAnimation = Tween<double>(begin: 0.0, end: 6 * 3.141592653589793).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.1, 0.9, curve: Curves.easeOutCubic)),
-    );
+    _rotationAnimation = Tween<double>(begin: 0.0, end: 6 * 3.141592653589793)
+        .animate(
+          CurvedAnimation(
+            parent: _controller,
+            curve: const Interval(0.1, 0.9, curve: Curves.easeOutCubic),
+          ),
+        );
 
     // 演出完了後、少し待ってから自動的にトランジション画面へ遷移
     Future.delayed(const Duration(milliseconds: 3500), () {
@@ -105,96 +120,103 @@ class _GenerationScreenState extends State<GenerationScreen>
             child: SingleChildScrollView(
               child: Center(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 24,
+                  ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text(
-                  '分析中...',
-                  style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF3B3B3B),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                const Text(
-                  'AIがあなたのポジティブを\nコインに変換中です ✨',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Color(0xFF5A5A5A),
-                    height: 1.6,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                SizedBox(
-                  height: 480,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      // The Coin (Animated)
-                      AnimatedBuilder(
-                        animation: _controller,
-                        builder: (context, child) {
-                          return Transform.translate(
-                            offset: Offset(0, _slideAnimation.value),
-                            child: Opacity(
-                              opacity: _coinOpacityAnimation.value,
-                              child: Transform(
-                                alignment: Alignment.center,
-                                transform: Matrix4.identity()
-                                  ..setEntry(3, 2, 0.001) // perspective
-                                  ..rotateY(_rotationAnimation.value) // 3D spin
-                                  ..scale(_scaleAnimation.value), // scale up
-                                child: child,
-                              ),
-                            ),
-                          );
-                        },
-                        child: CoinWidget(
-                          category: dummyCategory,
-                          isAcquired: true,
-                          size: 180,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 10),
-                FadeTransition(
-                  opacity: _opacityAnimation,
-                  child: Column(
                     children: [
                       const Text(
-                        '素敵なコインが生まれました！',
+                        '分析中...',
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: 26,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF4A4A4A),
+                          color: Color(0xFF3B3B3B),
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 14),
                       const Text(
-                        'ポジティブな気持ちがコインになって貯まります。',
+                        'AIがあなたのポジティブを\nコインに変換中です ✨',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF7A7A7A),
+                          fontSize: 16,
+                          color: Color(0xFF5A5A5A),
                           height: 1.6,
                         ),
                       ),
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        height: 480,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            // The Coin (Animated)
+                            AnimatedBuilder(
+                              animation: _controller,
+                              builder: (context, child) {
+                                return Transform.translate(
+                                  offset: Offset(0, _slideAnimation.value),
+                                  child: Opacity(
+                                    opacity: _coinOpacityAnimation.value,
+                                    child: Transform(
+                                      alignment: Alignment.center,
+                                      transform: Matrix4.identity()
+                                        ..setEntry(3, 2, 0.001) // perspective
+                                        ..rotateY(
+                                          _rotationAnimation.value,
+                                        ) // 3D spin
+                                        ..scale(
+                                          _scaleAnimation.value,
+                                        ), // scale up
+                                      child: child,
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: CoinWidget(
+                                category: dummyCategory,
+                                isAcquired: true,
+                                size: 180,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      FadeTransition(
+                        opacity: _opacityAnimation,
+                        child: Column(
+                          children: [
+                            const Text(
+                              '素敵なコインが生まれました！',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF4A4A4A),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'ポジティブな気持ちがコインになって貯まります。',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFF7A7A7A),
+                                height: 1.6,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
                     ],
                   ),
                 ),
-                const SizedBox(height: 20),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
-      ),
-      ],
+        ],
       ),
     );
   }
@@ -243,7 +265,7 @@ class _MagicalPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     // The visual center of the stack where the coin is
-    final center = Offset(size.width / 2, size.height * 0.42); 
+    final center = Offset(size.width / 2, size.height * 0.42);
 
     // Soft Glow Background
     double glowOpacity = (introProgress * 1.5).clamp(0.0, 1.0);
@@ -261,25 +283,24 @@ class _MagicalPainter extends CustomPainter {
     // Spinning Light Rays
     if (introProgress > 0.1) {
       final rayOpacity = (introProgress - 0.1).clamp(0.0, 1.0);
-      final rayPaint = Paint()
-        ..style = PaintingStyle.fill;
+      final rayPaint = Paint()..style = PaintingStyle.fill;
 
       canvas.save();
       canvas.translate(center.dx, center.dy);
       canvas.rotate(loopProgress * 2 * math.pi);
-      
+
       int numRays = 16;
       for (int i = 0; i < numRays; i++) {
         canvas.save();
         canvas.rotate((i * 2 * math.pi) / numRays);
-        
+
         final path = Path()
           ..moveTo(-12, 0)
           ..lineTo(12, 0)
           ..lineTo(50, size.width)
           ..lineTo(-50, size.width)
           ..close();
-        
+
         rayPaint.shader = LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
@@ -288,7 +309,7 @@ class _MagicalPainter extends CustomPainter {
             Colors.white.withOpacity(0.0),
           ],
         ).createShader(Rect.fromLTRB(-50, 0, 50, size.width));
-        
+
         canvas.drawPath(path, rayPaint);
         canvas.restore();
       }
@@ -297,17 +318,22 @@ class _MagicalPainter extends CustomPainter {
 
     // Expanding Rings
     final ringPaint = Paint()
-      ..color = Colors.white.withOpacity((1.0 - introProgress).clamp(0.0, 1.0) * 0.9)
+      ..color = Colors.white.withOpacity(
+        (1.0 - introProgress).clamp(0.0, 1.0) * 0.9,
+      )
       ..style = PaintingStyle.stroke
       ..strokeWidth = 6.0;
-    
+
     double radius1 = introProgress * size.width * 0.9;
-    if (radius1 > 0 && introProgress < 1.0) canvas.drawCircle(center, radius1, ringPaint);
+    if (radius1 > 0 && introProgress < 1.0)
+      canvas.drawCircle(center, radius1, ringPaint);
 
     double progress2 = (introProgress - 0.2) * 1.25;
     if (progress2 > 0 && progress2 < 1.0) {
       final ring2Paint = Paint()
-        ..color = Colors.white.withOpacity((1.0 - progress2).clamp(0.0, 1.0) * 0.7)
+        ..color = Colors.white.withOpacity(
+          (1.0 - progress2).clamp(0.0, 1.0) * 0.7,
+        )
         ..style = PaintingStyle.stroke
         ..strokeWidth = 12.0;
       double radius2 = progress2 * size.width * 0.8;
@@ -322,13 +348,13 @@ class _MagicalPainter extends CustomPainter {
       double starProgress = (loopProgress * 3 + i / numStars) % 1.0;
       double distance = (starProgress * size.width * 0.7) + 50;
       double starSize = 4.0 + (i % 6);
-      
+
       double sx = center.dx + distance * math.cos(angle);
       double sy = center.dy + distance * math.sin(angle);
-      
+
       double starOpacity = math.sin(starProgress * math.pi);
       starPaint.color = Colors.white.withOpacity(starOpacity * introProgress);
-      
+
       _drawStar(canvas, Offset(sx, sy), starSize, starPaint);
     }
   }
@@ -336,10 +362,30 @@ class _MagicalPainter extends CustomPainter {
   void _drawStar(Canvas canvas, Offset position, double size, Paint paint) {
     final path = Path();
     path.moveTo(position.dx, position.dy - size);
-    path.quadraticBezierTo(position.dx, position.dy, position.dx + size / 2, position.dy);
-    path.quadraticBezierTo(position.dx, position.dy, position.dx, position.dy + size);
-    path.quadraticBezierTo(position.dx, position.dy, position.dx - size / 2, position.dy);
-    path.quadraticBezierTo(position.dx, position.dy, position.dx, position.dy - size);
+    path.quadraticBezierTo(
+      position.dx,
+      position.dy,
+      position.dx + size / 2,
+      position.dy,
+    );
+    path.quadraticBezierTo(
+      position.dx,
+      position.dy,
+      position.dx,
+      position.dy + size,
+    );
+    path.quadraticBezierTo(
+      position.dx,
+      position.dy,
+      position.dx - size / 2,
+      position.dy,
+    );
+    path.quadraticBezierTo(
+      position.dx,
+      position.dy,
+      position.dx,
+      position.dy - size,
+    );
     path.close();
     canvas.drawPath(path, paint);
   }
@@ -347,9 +393,7 @@ class _MagicalPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _MagicalPainter oldDelegate) {
     return oldDelegate.introProgress != introProgress ||
-           oldDelegate.loopProgress != loopProgress ||
-           oldDelegate.color != color;
+        oldDelegate.loopProgress != loopProgress ||
+        oldDelegate.color != color;
   }
 }
-
-
