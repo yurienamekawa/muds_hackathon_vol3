@@ -244,7 +244,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              '今日の記録',
+              '今日の記録✏️',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
@@ -287,12 +287,12 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              '記録の継続グラフ',
+              '記録の継続グラフ📈',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             const Text(
-              '今日の記録数に応じて草が育ちます。',
+              '今日の記録数に応じて草🌱が育ちます。',
               style: TextStyle(fontSize: 14, color: Color(0xFF6B6B6B)),
             ),
             const SizedBox(height: 16),
@@ -324,7 +324,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              '感情のバランス',
+              '感情のバランス📊',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
@@ -355,7 +355,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: const [
             Text(
-              'AIからのメッセージ',
+              'AIからのメッセージ💌',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 12),

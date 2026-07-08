@@ -3,13 +3,40 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:math' as math;
+import 'dart:async';
+import 'dart:ui';
+import 'package:sensors_plus/sensors_plus.dart';
 import '5_collection.dart';
 
-class HomeScreen extends StatelessWidget {
+enum TimeOfDayTheme { morning, day, evening, night }
+
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, this.savedNote = '', this.currentCoins = 128});
 
   final String savedNote;
   final int currentCoins;
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  late TimeOfDayTheme _currentTheme;
+
+  @override
+  void initState() {
+    super.initState();
+    final hour = DateTime.now().hour;
+    if (hour >= 5 && hour < 10) {
+      _currentTheme = TimeOfDayTheme.morning;
+    } else if (hour >= 10 && hour < 16) {
+      _currentTheme = TimeOfDayTheme.day;
+    } else if (hour >= 16 && hour < 19) {
+      _currentTheme = TimeOfDayTheme.evening;
+    } else {
+      _currentTheme = TimeOfDayTheme.night;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,45 +61,61 @@ class HomeScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 20), // 少し調整
+              const SizedBox(height: 10),
               const Text(
                 '貯まったコイン',
                 style: TextStyle(
                   fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF4A4A4A),
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF5A5A5A),
+                  letterSpacing: 1.5,
                 ),
               ),
               const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  const Icon(
-                    Icons.monetization_on,
-                    color: Colors.amber,
-                    size: 40,
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    child: const CoinWidget(
+                      category: {
+                        'color': Color(0xFFFFD54F),
+                        'icon': Icons.attach_money,
+                      },
+                      isAcquired: true,
+                      size: 52.0,
+                    ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 16),
                   Text(
-                    '$currentCoins',
+                    '${widget.currentCoins}',
                     style: const TextStyle(
-                      fontSize: 48,
+                      fontSize: 64,
+                      height: 0.9,
                       fontWeight: FontWeight.w900,
-                      color: Color(0xFF2B2B2B),
+                      color: Color(0xFF4A4A4A),
+                      letterSpacing: -1.0,
                     ),
                   ),
                   const SizedBox(width: 8),
-                  const Text(
-                    '枚',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF2B2B2B),
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 8.0),
+                    child: Text(
+                      '枚',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF5A5A5A),
+                      ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 30),
-              PiggyBankCard(currentCoins: currentCoins),
+              const SizedBox(height: 24),
+              _buildTimeSelector(),
+              const SizedBox(height: 24),
+              PiggyBankCard(currentCoins: widget.currentCoins, theme: _currentTheme),
               const SizedBox(height: 30),
               Container(
                 width: double.infinity,
@@ -120,7 +163,155 @@ class HomeScreen extends StatelessWidget {
                   ],
                 ),
               ),
+              const SizedBox(height: 30),
+              // Shake instruction
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Transform.rotate(
+                    angle: -0.2,
+                    child: const Icon(
+                      Icons.vibration_rounded,
+                      color: Color(0xFFFF5A79),
+                      size: 40,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'スマホをシェイクすると',
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: Color(0xFF666666),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        '貯金箱のコインが揺れるよ！',
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: Color(0xFF666666),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
               const SizedBox(height: 40),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTimeSelector() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 24),
+      height: 56,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 15,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xFFF9C8C8).withValues(alpha: 0.85), // Light pink
+                  const Color(0xFFD68A9B).withValues(alpha: 0.85),
+                  const Color(0xFF985A75).withValues(alpha: 0.85),
+                  const Color(0xFF5A3152).withValues(alpha: 0.85), // Dark plum
+                ],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+              ),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.3),
+                width: 1.5,
+              ),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              children: [
+                _buildSegment(TimeOfDayTheme.morning, '朝', Icons.wb_twilight, true, false),
+                _buildDivider(),
+                _buildSegment(TimeOfDayTheme.day, '昼', Icons.wb_sunny_rounded, false, false),
+                _buildDivider(),
+                _buildSegment(TimeOfDayTheme.evening, '夕', Icons.wb_cloudy_outlined, false, false),
+                _buildDivider(),
+                _buildSegment(TimeOfDayTheme.night, '夜', Icons.nightlight_round, false, true),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDivider() {
+    return Container(
+      width: 1,
+      height: 30,
+      color: Colors.white.withValues(alpha: 0.25),
+    );
+  }
+
+  Widget _buildSegment(TimeOfDayTheme theme, String label, IconData icon, bool isFirst, bool isLast) {
+    final isSelected = _currentTheme == theme;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _currentTheme = theme;
+          });
+        },
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          decoration: isSelected
+              ? BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.horizontal(
+                    left: isFirst ? const Radius.circular(15) : Radius.zero,
+                    right: isLast ? const Radius.circular(15) : Radius.zero,
+                  ),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1.5),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.white.withValues(alpha: 0.1),
+                      blurRadius: 8,
+                      spreadRadius: 1,
+                    ),
+                  ],
+                )
+              : null,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: Colors.white, size: 20),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  fontFamily: 'serif',
+                ),
+              ),
             ],
           ),
         ),
@@ -135,11 +326,13 @@ class PiggyBankCard extends StatelessWidget {
     this.currentCoins = 7,
     this.fallingCoin,
     this.showCollectionButton = true,
+    this.theme = TimeOfDayTheme.day,
   });
 
   final int currentCoins;
   final Widget? fallingCoin;
   final bool showCollectionButton;
+  final TimeOfDayTheme theme;
 
   @override
   Widget build(BuildContext context) {
@@ -161,7 +354,7 @@ class PiggyBankCard extends StatelessWidget {
               children: [
                 // Background Landscape (Gradient, Grass, Flowers, Hearts)
                 Positioned.fill(
-                  child: CustomPaint(painter: PiggyBankBackgroundPainter()),
+                  child: CustomPaint(painter: PiggyBankBackgroundPainter(theme: theme)),
                 ),
 
                 // Glass Piggy Bank UI
@@ -233,262 +426,369 @@ class PiggyBankCard extends StatelessWidget {
 }
 
 class PiggyBankBackgroundPainter extends CustomPainter {
+  final TimeOfDayTheme theme;
+  PiggyBankBackgroundPainter({required this.theme});
+  @override
   @override
   void paint(Canvas canvas, Size size) {
-    final rect = Offset.zero & size;
+    List<Color> skyColors;
+    Color distantHillColor;
+    Color treeTrunkColor;
+    Color treeLeafColor;
+    Color treeLeafHighlight;
+    Color groundMainColor;
+    Color groundGradientColor;
+    Color shadowColor;
+    Color bushColor;
+    Color daisyColor;
+    Color blueFlowerColor;
+    Color redFlowerColor;
+    Color tulipColor;
+    Color sparkleColor;
+    Color heartColor;
+    
+    switch(theme) {
+      case TimeOfDayTheme.morning:
+        skyColors = [const Color(0xFFFFF7E0), const Color(0xFFFFE5C4)];
+        distantHillColor = const Color(0xFFC5E1A5);
+        treeTrunkColor = const Color(0xFFA1887F);
+        treeLeafColor = const Color(0xFFAED581);
+        treeLeafHighlight = const Color(0xFFC5E1A5).withValues(alpha: 0.8);
+        groundMainColor = const Color(0xFFA5D6A7);
+        groundGradientColor = const Color(0xFF81C784);
+        shadowColor = Colors.black.withValues(alpha: 0.08);
+        bushColor = const Color(0xFF66BB6A);
+        daisyColor = Colors.white.withValues(alpha: 0.85);
+        blueFlowerColor = const Color(0xFF90CAF9);
+        redFlowerColor = const Color(0xFFEF9A9A);
+        tulipColor = const Color(0xFFFFB74D);
+        sparkleColor = Colors.white;
+        heartColor = const Color(0xFFF06292);
+        break;
+      case TimeOfDayTheme.day:
+        skyColors = [const Color(0xFFE1F5FE), const Color(0xFFFFF9C4)]; // Light blue to pale yellow
+        distantHillColor = const Color(0xFFAED581); // Slightly more vibrant
+        treeTrunkColor = const Color(0xFF8D6E63);
+        treeLeafColor = const Color(0xFF81C784);
+        treeLeafHighlight = const Color(0xFFAED581).withValues(alpha: 0.8);
+        groundMainColor = const Color(0xFF81C784);
+        groundGradientColor = const Color(0xFF66BB6A);
+        shadowColor = Colors.black.withValues(alpha: 0.1);
+        bushColor = const Color(0xFF4CAF50);
+        daisyColor = Colors.white.withValues(alpha: 0.9);
+        blueFlowerColor = const Color(0xFF64B5F6);
+        redFlowerColor = const Color(0xFFE57373);
+        tulipColor = const Color(0xFFFFA726);
+        sparkleColor = Colors.white;
+        heartColor = const Color(0xFFEC407A);
+        break;
+      case TimeOfDayTheme.evening:
+        skyColors = [const Color(0xFFEF5350), const Color(0xFFFFB74D)]; // Red to orange
+        distantHillColor = const Color(0xFF8D6E63); // Brownish
+        treeTrunkColor = const Color(0xFF5D4037);
+        treeLeafColor = const Color(0xFF795548);
+        treeLeafHighlight = const Color(0xFF8D6E63).withValues(alpha: 0.8);
+        groundMainColor = const Color(0xFF795548);
+        groundGradientColor = const Color(0xFF5D4037);
+        shadowColor = Colors.black.withValues(alpha: 0.2);
+        bushColor = const Color(0xFF4E342E);
+        daisyColor = const Color(0xFFFFE0B2).withValues(alpha: 0.8);
+        blueFlowerColor = const Color(0xFFCE93D8);
+        redFlowerColor = const Color(0xFFD32F2F);
+        tulipColor = const Color(0xFFFF7043);
+        sparkleColor = const Color(0xFFFFCC80);
+        heartColor = const Color(0xFFC2185B);
+        break;
+      case TimeOfDayTheme.night:
+        skyColors = [const Color(0xFF1A237E), const Color(0xFF3949AB)]; // Dark navy
+        distantHillColor = const Color(0xFF283593);
+        treeTrunkColor = const Color(0xFF1A237E);
+        treeLeafColor = const Color(0xFF303F9F);
+        treeLeafHighlight = const Color(0xFF3949AB).withValues(alpha: 0.8);
+        groundMainColor = const Color(0xFF283593);
+        groundGradientColor = const Color(0xFF1A237E);
+        shadowColor = Colors.black.withValues(alpha: 0.3);
+        bushColor = const Color(0xFF1A237E);
+        daisyColor = Colors.white.withValues(alpha: 0.4);
+        blueFlowerColor = const Color(0xFF5C6BC0);
+        redFlowerColor = const Color(0xFF7986CB);
+        tulipColor = const Color(0xFF5C6BC0);
+        sparkleColor = const Color(0xFFFFF59D); // Yellow fireflies
+        heartColor = const Color(0xFF9FA8DA);
+        break;
+    }
 
-    // 1. 空のグラデーション
+    // 1. Sky Gradient
     final skyGradient = LinearGradient(
       begin: Alignment.topCenter,
       end: Alignment.bottomCenter,
-      colors: [
-        const Color(0xFFFFF0F5), // 薄いピンク
-        const Color(0xFFFCF5EE), // クリーム
-        const Color(0xFFF0F8FF), // 薄い水色
-      ],
-      stops: const [0.0, 0.5, 1.0],
+      colors: skyColors,
+      stops: const [0.0, 1.0],
     );
-    canvas.drawRect(rect, Paint()..shader = skyGradient.createShader(rect));
+    canvas.drawRect(
+      Rect.fromLTWH(0, 0, size.width, size.height * 0.5), 
+      Paint()..shader = skyGradient.createShader(Rect.fromLTWH(0, 0, size.width, size.height * 0.5))
+    );
 
-    // 光のオーブ（空に浮かぶキラキラ）
-    void drawBokeh(Offset center, double radius, Color color) {
+    // Draw Sun or Moon
+    if (theme == TimeOfDayTheme.morning || theme == TimeOfDayTheme.evening) {
+      // Glow
       canvas.drawCircle(
-        center,
-        radius,
+        Offset(size.width * 0.25, size.height * 0.4),
+        size.width * 0.3,
         Paint()
-          ..color = color
+          ..color = const Color(0xFFFFF9C4).withValues(alpha: 0.2)
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 20),
       );
-    }
-
-    drawBokeh(
-      Offset(size.width * 0.2, size.height * 0.3),
-      size.width * 0.3,
-      Colors.white.withValues(alpha: 0.5),
-    );
-    drawBokeh(
-      Offset(size.width * 0.8, size.height * 0.4),
-      size.width * 0.4,
-      const Color(0xFFFFFACD).withValues(alpha: 0.3),
-    );
-
-    // 2. 芝生の丘（丸みのある丘をいくつか重ねる）
-    final hillPaint1 = Paint()
-      ..shader =
-          const LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFFE2F0D9), Color(0xFFC5E0B4)],
-          ).createShader(
-            Rect.fromLTWH(0, size.height * 0.5, size.width, size.height * 0.5),
-          );
-
-    final hillPaint2 = Paint()
-      ..shader =
-          const LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFFD5E8D4), Color(0xFFA9C4A0)],
-          ).createShader(
-            Rect.fromLTWH(0, size.height * 0.6, size.width, size.height * 0.4),
-          );
-
-    // 奥の丘
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(size.width * 0.2, size.height * 0.9),
-        width: size.width * 1.5,
-        height: size.height * 0.6,
-      ),
-      hillPaint1,
-    );
-    // 手前の丘
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(size.width * 0.8, size.height * 0.95),
-        width: size.width * 1.5,
-        height: size.height * 0.5,
-      ),
-      hillPaint2,
-    );
-
-    // 3. 芝生の葉っぱ
-    void drawGrass(Offset pos, double scale) {
-      final paint = Paint()
-        ..color = const Color(0xFF9CC864).withValues(alpha: 0.8)
-        ..style = PaintingStyle.fill;
-
-      void drawBlade(double angleDeg, double height) {
-        canvas.save();
-        canvas.translate(pos.dx, pos.dy);
-        canvas.rotate(angleDeg * math.pi / 180);
-        final path = Path();
-        path.moveTo(-3 * scale, 0);
-        path.quadraticBezierTo(0, -height * 0.5 * scale, 0, -height * scale);
-        path.quadraticBezierTo(3 * scale, -height * 0.5 * scale, 3 * scale, 0);
-        canvas.drawPath(path, paint);
-        canvas.restore();
-      }
-
-      drawBlade(-15, 20);
-      drawBlade(0, 30);
-      drawBlade(15, 18);
-    }
-
-    drawGrass(Offset(size.width * 0.15, size.height * 0.85), 1.0);
-    drawGrass(Offset(size.width * 0.85, size.height * 0.9), 1.2);
-    drawGrass(Offset(size.width * 0.4, size.height * 0.95), 0.8);
-    drawGrass(Offset(size.width * 0.7, size.height * 0.8), 0.9);
-
-    // 4. お花
-    void drawFlower(Offset pos, double sizeParam, Color petalColor) {
-      final petalPaint = Paint()..color = petalColor;
-      // 影
+      // Sun
       canvas.drawCircle(
-        pos + const Offset(0, 2),
-        sizeParam * 1.2,
-        Paint()
-          ..color = Colors.black.withValues(alpha: 0.05)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2),
+        Offset(size.width * 0.25, size.height * 0.45),
+        size.width * 0.15,
+        Paint()..color = const Color(0xFFFFF9C4).withValues(alpha: 0.8),
       );
+    } else if (theme == TimeOfDayTheme.day) {
+      // High Sun
+      canvas.drawCircle(
+        Offset(size.width * 0.5, size.height * 0.3),
+        size.width * 0.25,
+        Paint()
+          ..color = Colors.white.withValues(alpha: 0.4)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 25),
+      );
+    } else if (theme == TimeOfDayTheme.night) {
+      // Moon
+      canvas.drawCircle(
+        Offset(size.width * 0.8, size.height * 0.15),
+        size.width * 0.08,
+        Paint()..color = const Color(0xFFFFF9C4),
+      );
+      // Moon inner cut out to make it crescent
+      canvas.drawCircle(
+        Offset(size.width * 0.77, size.height * 0.13),
+        size.width * 0.08,
+        Paint()..color = skyColors[0],
+      );
+    }
 
-      for (int i = 0; i < 5; i++) {
-        final angle = (i * 2 * math.pi) / 5;
-        final cx = pos.dx + math.cos(angle) * sizeParam * 0.7;
-        final cy = pos.dy + math.sin(angle) * sizeParam * 0.7;
-        canvas.drawCircle(Offset(cx, cy), sizeParam * 0.55, petalPaint);
-      }
-      // 中心
+    // 2. Distant Hills (Background)
+    final distantHillPaint = Paint()..color = distantHillColor;
+    // Left distant hill
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset(size.width * 0.2, size.height * 0.45), width: size.width * 0.8, height: size.height * 0.3),
+      distantHillPaint,
+    );
+    // Right distant hill
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset(size.width * 0.8, size.height * 0.45), width: size.width * 0.8, height: size.height * 0.3),
+      distantHillPaint,
+    );
+
+    // 3. Trees
+    void drawTree(Offset pos, double scale) {
+      // Trunk
+      canvas.drawRect(
+        Rect.fromCenter(center: pos + Offset(0, 15 * scale), width: 6 * scale, height: 20 * scale),
+        Paint()..color = treeTrunkColor,
+      );
+      // Leaves (round)
       canvas.drawCircle(
         pos,
-        sizeParam * 0.45,
-        Paint()..color = const Color(0xFFFFD54F),
+        18 * scale,
+        Paint()..color = treeLeafColor,
+      );
+      // Highlight on leaves
+      canvas.drawCircle(
+        pos + Offset(-4 * scale, -4 * scale),
+        8 * scale,
+        Paint()..color = treeLeafHighlight,
       );
     }
 
-    drawFlower(
-      Offset(size.width * 0.22, size.height * 0.88),
-      10,
-      const Color(0xFFFFF2ED),
+    drawTree(Offset(size.width * 0.1, size.height * 0.35), 1.2);
+    drawTree(Offset(size.width * 0.22, size.height * 0.38), 0.8);
+    drawTree(Offset(size.width * 0.88, size.height * 0.32), 1.4);
+
+    // 4. Main Ground (Mid-ground)
+    final groundPath = Path();
+    groundPath.moveTo(0, size.height * 0.45);
+    groundPath.quadraticBezierTo(size.width * 0.5, size.height * 0.4, size.width, size.height * 0.42);
+    groundPath.lineTo(size.width, size.height);
+    groundPath.lineTo(0, size.height);
+    groundPath.close();
+    
+    canvas.drawPath(
+      groundPath,
+      Paint()..color = groundMainColor,
     );
-    drawFlower(
-      Offset(size.width * 0.8, size.height * 0.92),
-      12,
-      const Color(0xFFFFE4E1),
+    
+    // Add a darker green gradient towards the bottom
+    final groundGradient = LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [
+        groundMainColor.withValues(alpha: 0.0),
+        groundGradientColor,
+      ],
     );
-    drawFlower(
-      Offset(size.width * 0.1, size.height * 0.8),
-      8,
-      const Color(0xFFE0FFFF),
+    canvas.drawPath(
+      groundPath,
+      Paint()..shader = groundGradient.createShader(Rect.fromLTWH(0, size.height * 0.6, size.width, size.height * 0.4)),
     );
 
-    // 5. 蝶々（♡）
-    void drawButterflyHeart(
-      Offset pos,
-      double sizeParam,
-      double rotation,
-      Color color,
-    ) {
-      canvas.save();
-      canvas.translate(pos.dx, pos.dy);
-      canvas.rotate(rotation);
+    // 5. Shadow under the pig
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(size.width * 0.5, size.height * 0.85),
+        width: size.width * 0.7,
+        height: size.height * 0.15,
+      ),
+      Paint()
+        ..color = shadowColor
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10),
+    );
 
-      final paint = Paint()..color = color;
+    // 6. Foreground Bushes
+    final bushPaint = Paint()..color = bushColor;
+    
+    // Bottom-left bushes
+    canvas.drawCircle(Offset(size.width * 0.0, size.height * 0.95), size.width * 0.2, bushPaint);
+    canvas.drawCircle(Offset(size.width * 0.15, size.height * 1.0), size.width * 0.15, bushPaint);
+    canvas.drawCircle(Offset(size.width * 0.3, size.height * 1.05), size.width * 0.15, bushPaint);
+    
+    // Bottom-right bushes
+    canvas.drawCircle(Offset(size.width * 1.0, size.height * 0.92), size.width * 0.25, bushPaint);
+    canvas.drawCircle(Offset(size.width * 0.85, size.height * 1.0), size.width * 0.18, bushPaint);
+    canvas.drawCircle(Offset(size.width * 0.7, size.height * 1.05), size.width * 0.15, bushPaint);
+
+    // 7. Flowers
+    void drawFlower(Offset pos, double sizeParam, Color petalColor, {bool hasStem = false}) {
+      if (hasStem) {
+        // Draw stem
+        final stemPath = Path();
+        stemPath.moveTo(pos.dx, pos.dy);
+        stemPath.quadraticBezierTo(pos.dx - 5, pos.dy + 15, pos.dx + 2, pos.dy + 30);
+        canvas.drawPath(
+          stemPath,
+          Paint()
+            ..color = distantHillColor
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2,
+        );
+        // Draw leaf
+        canvas.drawOval(
+          Rect.fromCenter(center: pos + const Offset(-6, 15), width: 8, height: 4),
+          Paint()..color = distantHillColor,
+        );
+      }
+      
+      final petalPaint = Paint()..color = petalColor;
+      for (int i = 0; i < 5; i++) {
+        final angle = (i * 2 * math.pi) / 5;
+        final cx = pos.dx + math.cos(angle) * sizeParam * 0.6;
+        final cy = pos.dy + math.sin(angle) * sizeParam * 0.6;
+        canvas.drawCircle(Offset(cx, cy), sizeParam * 0.5, petalPaint);
+      }
+      // Center
+      canvas.drawCircle(pos, sizeParam * 0.4, Paint()..color = const Color(0xFFFFCA28));
+    }
+
+    // White daisies
+    drawFlower(Offset(size.width * 0.15, size.height * 0.6), 6, daisyColor);
+    drawFlower(Offset(size.width * 0.85, size.height * 0.5), 5, daisyColor);
+    drawFlower(Offset(size.width * 0.2, size.height * 0.8), 8, daisyColor);
+    
+    // Blue flower
+    drawFlower(Offset(size.width * 0.1, size.height * 0.7), 9, blueFlowerColor, hasStem: true);
+    
+    // Red flowers
+    drawFlower(Offset(size.width * 0.9, size.height * 0.58), 8, redFlowerColor, hasStem: true);
+    drawFlower(Offset(size.width * 0.92, size.height * 0.75), 9, redFlowerColor, hasStem: true);
+
+    // Tulip/Orange flower
+    void drawTulip(Offset pos, double scale) {
       final path = Path();
-      path.moveTo(0, sizeParam * 0.3);
-      path.cubicTo(
-        -sizeParam,
-        -sizeParam * 0.5,
-        -sizeParam * 0.2,
-        -sizeParam,
-        0,
-        -sizeParam * 0.3,
-      );
-      path.cubicTo(
-        sizeParam * 0.2,
-        -sizeParam,
-        sizeParam,
-        -sizeParam * 0.5,
-        0,
-        sizeParam * 0.3,
-      );
-      canvas.drawPath(path, paint);
-
-      canvas.restore();
+      path.moveTo(pos.dx, pos.dy + 10 * scale);
+      path.quadraticBezierTo(pos.dx - 8 * scale, pos.dy + 5 * scale, pos.dx - 6 * scale, pos.dy - 5 * scale);
+      path.quadraticBezierTo(pos.dx - 3 * scale, pos.dy, pos.dx, pos.dy - 8 * scale);
+      path.quadraticBezierTo(pos.dx + 3 * scale, pos.dy, pos.dx + 6 * scale, pos.dy - 5 * scale);
+      path.quadraticBezierTo(pos.dx + 8 * scale, pos.dy + 5 * scale, pos.dx, pos.dy + 10 * scale);
+      canvas.drawPath(path, Paint()..color = tulipColor);
     }
+    
+    drawTulip(Offset(size.width * 0.8, size.height * 0.85), 1.2);
+    
+    // Grass blades
+    void drawGrassBlade(Offset pos) {
+      final path = Path();
+      path.moveTo(pos.dx, pos.dy);
+      path.quadraticBezierTo(pos.dx - 2, pos.dy - 8, pos.dx + 2, pos.dy - 12);
+      path.quadraticBezierTo(pos.dx + 4, pos.dy - 6, pos.dx + 2, pos.dy);
+      canvas.drawPath(path, Paint()..color = distantHillColor);
+    }
+    
+    drawGrassBlade(Offset(size.width * 0.1, size.height * 0.52));
+    drawGrassBlade(Offset(size.width * 0.25, size.height * 0.55));
+    drawGrassBlade(Offset(size.width * 0.8, size.height * 0.55));
+    drawGrassBlade(Offset(size.width * 0.35, size.height * 0.88));
 
-    drawButterflyHeart(
-      Offset(size.width * 0.15, size.height * 0.5),
-      10,
-      -0.2,
-      const Color(0xFFFFB6C1).withValues(alpha: 0.9),
-    );
-    drawButterflyHeart(
-      Offset(size.width * 0.82, size.height * 0.3),
-      14,
-      0.3,
-      const Color(0xFFFF69B4).withValues(alpha: 0.8),
-    );
-    drawButterflyHeart(
-      Offset(size.width * 0.75, size.height * 0.55),
-      8,
-      0.1,
-      const Color(0xFFFFC0CB).withValues(alpha: 0.9),
-    );
-    drawButterflyHeart(
-      Offset(size.width * 0.3, size.height * 0.2),
-      12,
-      -0.4,
-      const Color(0xFFFFA07A).withValues(alpha: 0.8),
-    );
-
-    // 6. 星（キラキラ）
+    // 8. Sparkles (Stars / Fireflies)
     void drawSparkle(Offset center, double sizeParam, double opacity) {
       final path = Path();
       path.moveTo(center.dx, center.dy - sizeParam);
-      path.quadraticBezierTo(
-        center.dx,
-        center.dy,
-        center.dx + sizeParam,
-        center.dy,
-      );
-      path.quadraticBezierTo(
-        center.dx,
-        center.dy,
-        center.dx,
-        center.dy + sizeParam,
-      );
-      path.quadraticBezierTo(
-        center.dx,
-        center.dy,
-        center.dx - sizeParam,
-        center.dy,
-      );
-      path.quadraticBezierTo(
-        center.dx,
-        center.dy,
-        center.dx,
-        center.dy - sizeParam,
-      );
+      path.quadraticBezierTo(center.dx, center.dy, center.dx + sizeParam, center.dy);
+      path.quadraticBezierTo(center.dx, center.dy, center.dx, center.dy + sizeParam);
+      path.quadraticBezierTo(center.dx, center.dy, center.dx - sizeParam, center.dy);
+      path.quadraticBezierTo(center.dx, center.dy, center.dx, center.dy - sizeParam);
       path.close();
 
       canvas.drawPath(
         path,
         Paint()
-          ..color = Colors.white.withValues(alpha: opacity)
+          ..color = sparkleColor.withValues(alpha: opacity)
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1),
       );
     }
 
-    drawSparkle(Offset(size.width * 0.85, size.height * 0.15), 12, 0.8);
-    drawSparkle(Offset(size.width * 0.1, size.height * 0.7), 10, 0.6);
+    if (theme == TimeOfDayTheme.night) {
+      // Fireflies / Stars
+      drawSparkle(Offset(size.width * 0.15, size.height * 0.1), 10, 0.8);
+      drawSparkle(Offset(size.width * 0.1, size.height * 0.4), 6, 0.6);
+      drawSparkle(Offset(size.width * 0.85, size.height * 0.65), 8, 0.7);
+      drawSparkle(Offset(size.width * 0.4, size.height * 0.2), 5, 0.8);
+      drawSparkle(Offset(size.width * 0.7, size.height * 0.4), 7, 0.9);
+      drawSparkle(Offset(size.width * 0.2, size.height * 0.8), 8, 0.6);
+      drawSparkle(Offset(size.width * 0.9, size.height * 0.85), 5, 0.7);
+    } else {
+      drawSparkle(Offset(size.width * 0.15, size.height * 0.1), 10, 0.8);
+      drawSparkle(Offset(size.width * 0.1, size.height * 0.4), 6, 0.6);
+      drawSparkle(Offset(size.width * 0.85, size.height * 0.65), 8, 0.7);
+    }
+
+    // 9. Floating Heart
+    void drawHeart(Offset pos, double scale) {
+      final path = Path();
+      path.moveTo(pos.dx, pos.dy + 4 * scale);
+      path.cubicTo(pos.dx - 5 * scale, pos.dy, pos.dx - 5 * scale, pos.dy - 6 * scale, pos.dx, pos.dy - 2 * scale);
+      path.moveTo(pos.dx, pos.dy + 4 * scale);
+      path.cubicTo(pos.dx + 5 * scale, pos.dy, pos.dx + 5 * scale, pos.dy - 6 * scale, pos.dx, pos.dy - 2 * scale);
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = heartColor
+          ..style = PaintingStyle.fill,
+      );
+    }
+
+    if (theme != TimeOfDayTheme.night) {
+      drawHeart(Offset(size.width * 0.85, size.height * 0.15), 1.5);
+    }
   }
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-class GlassPiggyBank extends StatelessWidget {
+class GlassPiggyBank extends StatefulWidget {
   final int currentCoins;
   final Widget? fallingCoin;
   const GlassPiggyBank({
@@ -496,6 +796,70 @@ class GlassPiggyBank extends StatelessWidget {
     required this.currentCoins,
     this.fallingCoin,
   });
+
+  @override
+  State<GlassPiggyBank> createState() => _GlassPiggyBankState();
+}
+
+class _GlassPiggyBankState extends State<GlassPiggyBank> with SingleTickerProviderStateMixin {
+  Offset _dragOffset = Offset.zero;
+  Offset _sensorOffset = Offset.zero;
+  Offset _mouseOffset = Offset.zero;
+  late final AnimationController _springController;
+  late Animation<Offset> _springAnimation;
+  StreamSubscription<AccelerometerEvent>? _accelerometerSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _springController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+    
+    _springController.addListener(() {
+      setState(() {
+        _dragOffset = _springAnimation.value;
+      });
+    });
+
+    _accelerometerSubscription = accelerometerEventStream().listen((AccelerometerEvent event) {
+      if (!mounted) return;
+      setState(() {
+        // デバイスの傾きや加速度をオフセットに変換（Xは左右、Yは上下）
+        // 画面の向きに合わせてX軸は反転させることで、重力に従って動く感覚を出す
+        _sensorOffset = Offset(-event.x * 2.5, (event.y - 9.8) * 2.5);
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _accelerometerSubscription?.cancel();
+    _springController.dispose();
+    super.dispose();
+  }
+
+  void _onPanUpdate(DragUpdateDetails details) {
+    setState(() {
+      _dragOffset += details.delta;
+      double maxDrag = 60.0;
+      if (_dragOffset.distance > maxDrag) {
+        _dragOffset = (_dragOffset / _dragOffset.distance) * maxDrag;
+      }
+    });
+  }
+
+  void _onPanEnd(DragEndDetails details) {
+    _springAnimation = Tween<Offset>(
+      begin: _dragOffset,
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _springController,
+      curve: Curves.elasticOut,
+    ));
+    _springController.forward(from: 0.0);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -512,7 +876,7 @@ class GlassPiggyBank extends StatelessWidget {
     final rnd = math.Random(88);
 
     final List<Widget> coins = [];
-    final int displayCoins = math.min(currentCoins, 25);
+    final int displayCoins = math.min(widget.currentCoins, 25);
 
     final double areaSize = 350.0;
     // 豚らしい横長の楕円形（Oval）のサイズ
@@ -541,15 +905,28 @@ class GlassPiggyBank extends StatelessWidget {
       final double angleY = (rnd.nextDouble() - 0.5) * 0.6;
       final double angleZ = rnd.nextDouble() * 2 * math.pi;
 
+      // 物理演算（揺れ＋加速度センサー＋マウス）の適用
+      final double parallax = 1.0 + (i % 4) * 0.2;
+      
+      // ドラッグの揺れ、デバイスの傾き（センサー）、マウスホバーの傾きの全てを加算
+      final Offset coinOffset = (_dragOffset * parallax) + (_sensorOffset * (parallax * 1.2)) + (_mouseOffset * parallax);
+      
+      final double finalCx = cx + coinOffset.dx;
+      final double finalCy = cy + coinOffset.dy;
+      
+      // 揺れに合わせて少し回転させる
+      final double shakeRotX = angleX + (_dragOffset.dy * 0.015 * parallax) + (_sensorOffset.dy * 0.02) + (_mouseOffset.dy * 0.015);
+      final double shakeRotY = angleY + (_dragOffset.dx * 0.015 * parallax) + (_sensorOffset.dx * 0.02) + (_mouseOffset.dx * 0.015);
+
       coins.add(
         Positioned(
-          left: cx - (coinSize / 2),
-          top: cy - (coinSize / 2),
+          left: finalCx - (coinSize / 2),
+          top: finalCy - (coinSize / 2),
           child: Coin3D(
             category: category,
             size: coinSize,
-            angleX: angleX,
-            angleY: angleY,
+            angleX: shakeRotX,
+            angleY: shakeRotY,
             angleZ: angleZ,
           ),
         ),
@@ -563,38 +940,61 @@ class GlassPiggyBank extends StatelessWidget {
     });
 
     return Center(
-      child: SizedBox(
-        width: areaSize,
-        height: areaSize,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            // 1. 背面のガラス層
-            Positioned.fill(
-              child: CustomPaint(painter: GlassPiggyBankBackPainter()),
-            ),
-
-            // 2. コイン層（ガラスからはみ出ないように楕円でクリップ）
-            Positioned.fill(
-              child: ClipPath(
-                clipper: PiggyBankBellyClipper(
-                  center: Offset(bellyCenterX, bellyCenterY),
-                  width: bellyWidth * 0.9,
-                  height: bellyHeight * 0.9,
+      child: MouseRegion(
+        onHover: (event) {
+          setState(() {
+            // マウスの位置を貯金箱の中心(areaSize/2)からの相対位置として取得し、傾きに変換
+            final double dx = event.localPosition.dx - (areaSize / 2);
+            final double dy = event.localPosition.dy - (areaSize / 2);
+            _mouseOffset = Offset(dx * 0.15, dy * 0.15);
+          });
+        },
+        onExit: (event) {
+          setState(() {
+            _mouseOffset = Offset.zero;
+          });
+        },
+        child: GestureDetector(
+          onPanUpdate: _onPanUpdate,
+        onPanEnd: _onPanEnd,
+        // ガラス全体も少しだけ揺れる
+        child: Transform.translate(
+          offset: _dragOffset * 0.2,
+          child: SizedBox(
+            width: areaSize,
+            height: areaSize,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                // 1. 背面のガラス層
+                Positioned.fill(
+                  child: CustomPaint(painter: GlassPiggyBankBackPainter()),
                 ),
-                child: Stack(clipBehavior: Clip.none, children: coins),
-              ),
-            ),
 
-            // 落下中のコイン
-            if (fallingCoin != null) fallingCoin!,
+                // 2. コイン層（ガラスからはみ出ないように楕円でクリップ）
+                Positioned.fill(
+                  child: ClipPath(
+                    clipper: PiggyBankBellyClipper(
+                      center: Offset(bellyCenterX, bellyCenterY),
+                      width: bellyWidth * 0.9,
+                      height: bellyHeight * 0.9,
+                    ),
+                    child: Stack(clipBehavior: Clip.none, children: coins),
+                  ),
+                ),
 
-            // 3. 前面のガラス層
-            Positioned.fill(
-              child: CustomPaint(painter: GlassPiggyBankFrontPainter()),
+                // 落下中のコイン
+                if (widget.fallingCoin != null) widget.fallingCoin!,
+
+                // 3. 前面のガラス層
+                Positioned.fill(
+                  child: CustomPaint(painter: GlassPiggyBankFrontPainter()),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
+      ),
       ),
     );
   }
@@ -690,11 +1090,11 @@ class GlassPiggyBankBackPainter extends CustomPainter {
     final backBodyPaint = Paint()
       ..shader = RadialGradient(
         colors: [
-          Colors.transparent,
-          Colors.black.withValues(alpha: 0.08),
-          const Color(0xFFE0F7FA).withValues(alpha: 0.4),
+          Colors.white.withValues(alpha: 0.25), // Stronger frosted glass base
+          Colors.black.withValues(alpha: 0.05),
+          const Color(0xFFE0F7FA).withValues(alpha: 0.6), // Stronger rim light
         ],
-        stops: const [0.7, 0.9, 1.0],
+        stops: const [0.0, 0.85, 1.0],
       ).createShader(bodyRect);
     canvas.drawOval(bodyRect, backBodyPaint);
 
@@ -756,10 +1156,10 @@ class GlassPiggyBankFrontPainter extends CustomPainter {
         center: const Alignment(-0.2, -0.2),
         radius: 0.9,
         colors: [
-          Colors.white.withValues(alpha: 0.0),
-          Colors.white.withValues(alpha: 0.1),
-          Colors.white.withValues(alpha: 0.6),
-          Colors.white.withValues(alpha: 0.95),
+          Colors.white.withValues(alpha: 0.15),
+          Colors.white.withValues(alpha: 0.35),
+          Colors.white.withValues(alpha: 0.8),
+          Colors.white.withValues(alpha: 1.0),
         ],
         stops: const [0.5, 0.85, 0.95, 1.0],
       ).createShader(bodyRect);
@@ -807,9 +1207,9 @@ class GlassPiggyBankFrontPainter extends CustomPainter {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Colors.white.withValues(alpha: 0.3),
-            Colors.transparent,
-          ], // 透明度を下げて柔らかく
+            Colors.white.withValues(alpha: 0.5), // Stronger highlight
+            Colors.white.withValues(alpha: 0.1),
+          ],
         ).createShader(windowHighlight.getBounds()),
     );
 

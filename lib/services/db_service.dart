@@ -18,4 +18,31 @@ class DbService {
 
     await client.from('happy_coins').insert(data);
   }
+
+  static Future<int> getTodayCoinCount() async {
+    final client = Supabase.instance.client;
+    final user = client.auth.currentUser;
+    if (user == null) return 0;
+
+    final data = await client
+        .from('happy_coins')
+        .select('created_at')
+        .eq('user_id', user.id);
+
+    int count = 0;
+    final today = DateTime.now();
+    for (var record in data as List) {
+      final createdStr = record['created_at'];
+      if (createdStr != null) {
+        final created = DateTime.tryParse(createdStr.toString())?.toLocal();
+        if (created != null &&
+            created.year == today.year &&
+            created.month == today.month &&
+            created.day == today.day) {
+          count++;
+        }
+      }
+    }
+    return count;
+  }
 }

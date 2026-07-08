@@ -81,98 +81,187 @@ class _InputScreenState extends State<InputScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFDF7EE),
+      backgroundColor: const Color(0xFFFDF9F1), // Warmer cream background
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: 24),
+              // Top Bar
               Row(
                 children: [
-                  IconButton(
-                    onPressed: widget.onBack,
-                    icon: const Icon(Icons.arrow_back),
-                    color: const Color(0xFF4A4A4A),
+                  GestureDetector(
+                    onTap: widget.onBack,
+                    child: const Icon(Icons.arrow_back, color: Color(0xFF5A5A5A), size: 24),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 12),
                   const Text(
                     '今日のちょっとポジティブなことは？',
                     style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF333333),
+                      fontFamily: 'serif',
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF4A4A4A),
+                      letterSpacing: 1.1,
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 24),
+              // Input Area
               Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 12,
-                        offset: const Offset(0, 6),
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  fit: StackFit.expand,
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFCFAF5),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: const Color(0xFFE0D4C3),
+                          width: 1.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.03),
+                            blurRadius: 15,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        TextField(
-                          controller: _controller,
-                          maxLines: null,
-                          maxLength: _maxLength,
-                          decoration: const InputDecoration(
-                            border: InputBorder.none,
-                            hintText: 'ここに入力してみよう...',
-                            counterText: '',
-                            hintStyle: TextStyle(color: Color(0xFFB3B3B3), fontSize: 16),
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Stack(
+                          children: [
+                            TextField(
+                              controller: _controller,
+                              maxLines: null,
+                              maxLength: _maxLength,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Color(0xFF4A4A4A),
+                                height: 1.6,
+                              ),
+                              decoration: const InputDecoration(
+                                border: InputBorder.none,
+                                hintText: 'ここに入力してみよう...',
+                                counterText: '', // Hide default counter
+                                hintStyle: TextStyle(
+                                  color: Color(0xFFBCAAA4),
+                                  fontSize: 16,
+                                  fontFamily: 'serif',
+                                ),
+                              ),
+                            ),
+                            // Counter at top right
+                            Positioned(
+                              top: 36,
+                              right: 0,
+                              child: Text(
+                                '$_currentLength / $_maxLength',
+                                style: const TextStyle(
+                                  color: Color(0xFFAFAFAF),
+                                  fontSize: 13,
+                                  fontFamily: 'serif',
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    // Sparkles overlay at bottom right
+                    Positioned(
+                      bottom: -30,
+                      right: -10,
+                      child: IgnorePointer(
+                        child: SizedBox(
+                          width: 150,
+                          height: 150,
+                          child: CustomPaint(
+                            painter: SparklePainter(),
                           ),
                         ),
-                        const SizedBox(height: 12),
-                        Align(
-                          alignment: Alignment.bottomRight,
-                          child: Text('$_currentLength / $_maxLength', style: const TextStyle(color: Color(0xFF9E9E9E), fontSize: 14)),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 22),
+              const SizedBox(height: 32),
+              // Buttons
               Row(
                 children: [
                   Expanded(
                     child: OutlinedButton(
                       onPressed: widget.onBack,
                       style: OutlinedButton.styleFrom(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-                        side: const BorderSide(color: Color(0xFFFFA1AB)),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        side: const BorderSide(color: Color(0xFFE2C9C5), width: 1.5),
+                        backgroundColor: const Color(0xFFFDF9F1),
                       ),
-                      child: const Padding(padding: EdgeInsets.symmetric(vertical: 14), child: Text('戻る', style: TextStyle(color: Color(0xFFFF5A79), fontWeight: FontWeight.bold))),
+                      child: const Text(
+                        '戻る',
+                        style: TextStyle(
+                          color: Color(0xFFC77A85),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _save, // ローディング中は押せないようにする
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF5A79),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(30),
+                        gradient: const LinearGradient(
+                          colors: [
+                            Color(0xFFF16E85),
+                            Color(0xFFD64A62),
+                          ],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFD64A62).withValues(alpha: 0.3),
+                            blurRadius: 12,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        child: _isLoading 
-                          ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                          : const Text('保存する ✨', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _save,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+                        child: _isLoading
+                            ? const SizedBox(
+                                height: 22,
+                                width: 22,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2.5,
+                                ),
+                              )
+                            : const Text(
+                                '保存する ✨',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
                       ),
                     ),
                   ),
@@ -185,4 +274,38 @@ class _InputScreenState extends State<InputScreen> {
       ),
     );
   }
+}
+
+class SparklePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFFFFD54F).withValues(alpha: 0.6)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+
+    final brightPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.8)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1);
+
+    void drawSparkle(Offset center, double radius) {
+      canvas.drawCircle(center, radius, paint);
+      canvas.drawCircle(center, radius * 0.4, brightPaint);
+    }
+
+    // Draw some scattered sparkles
+    drawSparkle(Offset(size.width * 0.2, size.height * 0.8), 2.5);
+    drawSparkle(Offset(size.width * 0.4, size.height * 0.9), 4);
+    drawSparkle(Offset(size.width * 0.6, size.height * 0.7), 3);
+    drawSparkle(Offset(size.width * 0.8, size.height * 0.85), 5);
+    drawSparkle(Offset(size.width * 0.5, size.height * 0.6), 2);
+    drawSparkle(Offset(size.width * 0.7, size.height * 0.5), 3.5);
+    drawSparkle(Offset(size.width * 0.9, size.height * 0.4), 2);
+    drawSparkle(Offset(size.width * 0.75, size.height * 0.95), 2);
+    drawSparkle(Offset(size.width * 0.3, size.height * 0.95), 1.5);
+    drawSparkle(Offset(size.width * 0.85, size.height * 0.65), 1.5);
+    drawSparkle(Offset(size.width * 0.95, size.height * 0.75), 3);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
