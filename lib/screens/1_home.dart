@@ -28,7 +28,8 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchCoinCount();
+    // 🌟 今はこうなっているはず
+    _fetchCoinCount(); 
   }
 
   Future<void> _fetchCoinCount() async {

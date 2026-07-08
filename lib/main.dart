@@ -11,10 +11,12 @@ import 'screens/4_analytics.dart';
 import 'services/ai_service.dart';
 import 'services/db_service.dart';
 
-void main() async {
+
+
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await dotenv.load(fileName: '.env');
+  await dotenv.load(fileName: ".env");
 
   await Supabase.initialize(
     url: dotenv.env['SUPABASE_URL']!,
