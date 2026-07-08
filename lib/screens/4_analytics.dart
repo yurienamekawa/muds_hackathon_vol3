@@ -12,30 +12,28 @@ class AnalyticsScreen extends StatefulWidget {
 
 class _AnalyticsScreenState extends State<AnalyticsScreen> {
   bool _isLoading = true;
-  String _insightMessage = 'これまでの記録から、あなたの幸せの傾向をまとめます。';
-  int _todayCount = 0;
-  int _totalEntries = 0;
+  String _adviceMessage = 'これまでの記録をもとに、あなたに合った幸せのヒントをお届けします。';
   late Map<String, double> _averageScores;
   late Map<DateTime, int> _dailyCounts;
   late String _topCategory;
 
   static const Map<String, String> _scoreLabels = {
-    'tsunagari': 'つながり度',
-    'wakuwaku': 'ワクワク度',
-    'kansha': '感謝度',
-    'tassei': '達成度',
-    'iyashi': 'リラックス度',
+    'score_tsunagari': 'つながり度',
+    'score_wakuwaku': 'ワクワク度',
+    'score_kansha': '感謝度',
+    'score_tassei': '達成度',
+    'score_iyashi': 'リラックス度',
   };
 
   @override
   void initState() {
     super.initState();
     _averageScores = {
-      'tsunagari': 3.0,
-      'wakuwaku': 3.0,
-      'kansha': 3.0,
-      'tassei': 3.0,
-      'iyashi': 3.0,
+      'score_tsunagari': 3.0,
+      'score_wakuwaku': 3.0,
+      'score_kansha': 3.0,
+      'score_tassei': 3.0,
+      'score_iyashi': 3.0,
     };
     _dailyCounts = {};
     _topCategory = '日常・景色';
@@ -52,7 +50,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       final user = client.auth.currentUser;
       if (user == null) {
         setState(() {
-          _insightMessage = 'ログインが必要です。';
           _isLoading = false;
         });
         return;
@@ -66,21 +63,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
       final records =
           (data as List<dynamic>?)?.cast<Map<String, dynamic>>().toList() ?? [];
-      _totalEntries = records.length;
-      _todayCount = records.where((record) {
-        final created = _parseCreatedAt(record['created_at']);
-        if (created == null) return false;
-        final today = DateTime.now();
-        return created.year == today.year &&
-            created.month == today.month &&
-            created.day == today.day;
-      }).length;
       _dailyCounts = _buildDailyCounts(records, 365);
       _averageScores = _buildAverageScores(records);
       _topCategory = _buildTopCategory(records);
-      _insightMessage = _buildInsightMessage(records, _topCategory);
+      _adviceMessage = _buildAdviceMessage(records, _topCategory);
     } catch (e) {
-      _insightMessage = 'データ取得中にエラーが発生しました。';
       debugPrint('Analytics load error: $e');
     } finally {
       if (mounted) {
@@ -124,18 +111,18 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
   Map<String, double> _buildAverageScores(List<Map<String, dynamic>> records) {
     final sums = {
-      'tsunagari': 0.0,
-      'wakuwaku': 0.0,
-      'kansha': 0.0,
-      'tassei': 0.0,
-      'iyashi': 0.0,
+      'score_tsunagari': 0.0,
+      'score_wakuwaku': 0.0,
+      'score_kansha': 0.0,
+      'score_tassei': 0.0,
+      'score_iyashi': 0.0,
     };
     final counts = {
-      'tsunagari': 0,
-      'wakuwaku': 0,
-      'kansha': 0,
-      'tassei': 0,
-      'iyashi': 0,
+      'score_tsunagari': 0,
+      'score_wakuwaku': 0,
+      'score_kansha': 0,
+      'score_tassei': 0,
+      'score_iyashi': 0,
     };
     for (final record in records) {
       for (final key in sums.keys) {
@@ -169,28 +156,43 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     return counter.entries.reduce((a, b) => a.value >= b.value ? a : b).key;
   }
 
-  String _buildInsightMessage(
+  String _buildAdviceMessage(
     List<Map<String, dynamic>> records,
     String topCategory,
   ) {
     if (records.isEmpty) {
-      return 'まだ記録がありません。今日の幸せをひとつ書いてみましょう！';
+      return 'まだ記録がありません。今日の幸せをひとつ書いてみましょう。';
     }
 
-    final suggestions = {
-      '家族': '家族との時間を大切にして、次は一緒に料理や散歩をしてみましょう。',
-      '友達・対人': '小さなコミュニケーションも大事です。近々誰かに「ありがとう」と伝えてみてください。',
-      '趣味・推し': '好きなことに少し時間を使うと、心がさらに軽くなります。',
-      '食事': '美味しい時間を記録すると、日々の幸せがもっと見えてきます。',
-      '仕事・学校': '小さな達成を振り返ることが、次のやる気になります。',
-      '運動・健康': '体を動かすことで気分もリフレッシュできます。次は短い散歩を試してみてください。',
-      'お出かけ': '新しい場所や風景が気持ちをリフレッシュさせます。近場の散歩に出かけてみましょう。',
-      '自己成長': '挑戦した経験を続けると、自己肯定感が育ちます。今日の学びをぜひ続けてみましょう。',
-      '日常・景色': '普段の景色の中にも幸せはあります。今日も、身近な「いいこと」を見つけてみましょう。',
+    final advice = {
+      '家族': 'これまでのメモには家族とのあたたかい時間が多く書かれています。次は一緒に料理や散歩をして、もっと穏やかな時間を増やしてみましょう。',
+      '友達・対人': '友達や大切な人との交流で幸せを感じやすいようです。近いうちに「ありがとう」や「元気？」の一言を送ってみてください。',
+      '趣味・推し': '好きなことに触れる時間があなたの元気のもとになっています。少しだけ趣味や推し活動に時間を使ってみると、心が軽くなります。',
+      '食事': '美味しい食事やごはんの時間から幸せを感じています。次はゆっくり味わえる食事を用意して、自分へのご褒美にしてみましょう。',
+      '仕事・学校': '日々の頑張りや達成感が大きな支えになっています。小さなひとつを終えた後に、自分をほめる時間を作ってみてください。',
+      '運動・健康': '体を動かしたときに気分がすっきりしやすいようです。短い散歩や軽い体操を習慣にして、もう少し自分の体と向き合ってみましょう。',
+      'お出かけ': '新しい風景や外出で心がリフレッシュしています。近場のお出かけでもいいので、気になる場所に行ってみるといいでしょう。',
+      '自己成長': '挑戦や学びを通じて幸せを感じる傾向があります。今日の経験を振り返り、次にやってみたいことを小さく決めてみてください。',
+      '日常・景色':
+          '毎日のちいさな景色や日常に幸せを見つけています。今日は見慣れた風景の中で、いつもと違う「いいな」と感じる瞬間を探してみましょう。',
     };
-    final suggestion =
-        suggestions[topCategory] ?? 'これまでの幸せを振り返って、今後も続けていきましょう。';
-    return '最近は「$topCategory」に幸せを感じています。$suggestion';
+
+    final message =
+        advice[topCategory] ??
+        'これまでの記録から、あなたが感じる幸せのヒントが見えてきました。日々の中で心地よいことを大切にしてみましょう。';
+    return 'これまでのメモをもとに、あなたがどんなときに幸せを感じやすいかを分析しました。$message';
+  }
+
+  String _buildRadarSummary() {
+    if (_averageScores.isEmpty) {
+      return 'まだ分析できる記録がありません。';
+    }
+    final sorted = _averageScores.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final best = sorted.first;
+    final label = _scoreLabels[best.key] ?? best.key;
+    final rounded = best.value.toStringAsFixed(1);
+    return 'あなたの一番高い項目は「$label」で、平均は $rounded です。';
   }
 
   @override
@@ -218,8 +220,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _buildSummaryCard(),
-                    const SizedBox(height: 16),
                     _buildContributionCard(),
                     const SizedBox(height: 16),
                     _buildRadarCard(),
@@ -338,6 +338,15 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               height: 320,
               child: RadarChart(values: _averageScores, labels: _scoreLabels),
             ),
+            const SizedBox(height: 12),
+            Text(
+              _buildRadarSummary(),
+              style: const TextStyle(
+                fontSize: 14,
+                color: Color(0xFF4A4A4A),
+                height: 1.6,
+              ),
+            ),
           ],
         ),
       ),
@@ -356,12 +365,15 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           children: const [
             Text(
               'AIからのメッセージ💌',
+          children: [
+            const Text(
+              'AIからのメッセージ',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
             Text(
-              'これまでの記録から、あなたの幸せの傾向をじっくり分析しました。今後は心地よさを大切にしながら、気持ちよい習慣を積み重ねていきましょう。',
-              style: TextStyle(
+              _adviceMessage,
+              style: const TextStyle(
                 fontSize: 14,
                 color: Color(0xFF4A4A4A),
                 height: 1.6,
@@ -647,9 +659,10 @@ class _RadarChartPainter extends CustomPainter {
     for (final entry in values.entries) {
       final label = labels[entry.key] ?? entry.key;
       final angle = angleStep * index - math.pi / 2;
+      final labelRadius = radius + 46;
       final labelPoint = Offset(
-        center.dx + (radius + 26) * math.cos(angle),
-        center.dy + (radius + 26) * math.sin(angle),
+        center.dx + labelRadius * math.cos(angle),
+        center.dy + labelRadius * math.sin(angle),
       );
       final textPainter = TextPainter(
         text: TextSpan(
@@ -658,12 +671,21 @@ class _RadarChartPainter extends CustomPainter {
         ),
         textAlign: TextAlign.center,
         textDirection: TextDirection.ltr,
-      )..layout(maxWidth: 80);
+      )..layout(maxWidth: 72);
+      final cosAngle = math.cos(angle);
+      final sinAngle = math.sin(angle);
+      final dx = cosAngle > 0.5
+          ? labelPoint.dx
+          : cosAngle < -0.5
+          ? labelPoint.dx - textPainter.width
+          : labelPoint.dx - textPainter.width / 2;
+      final dy = sinAngle > 0.5
+          ? labelPoint.dy
+          : sinAngle < -0.5
+          ? labelPoint.dy - textPainter.height
+          : labelPoint.dy - textPainter.height / 2;
       canvas.save();
-      canvas.translate(
-        labelPoint.dx - textPainter.width / 2,
-        labelPoint.dy - textPainter.height / 2,
-      );
+      canvas.translate(dx, dy);
       textPainter.paint(canvas, Offset.zero);
       canvas.restore();
       index += 1;

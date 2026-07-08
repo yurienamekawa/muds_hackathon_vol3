@@ -7,14 +7,61 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:sensors_plus/sensors_plus.dart';
 import '5_collection.dart';
+import 'dart:math' as math; // 必要であれば
 
 enum TimeOfDayTheme { morning, day, evening, night }
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, this.savedNote = '', this.currentCoins = 128});
 
+// lib/screens/1_home.dart 内の HomeScreen クラスを修正
+class HomeScreen extends StatefulWidget {
+  // 🌟 ここで引数を受け取れるようにします
   final String savedNote;
   final int currentCoins;
+
+  const HomeScreen({
+    super.key, 
+    this.savedNote = '', 
+    this.currentCoins = 0,
+  });
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  int _coinCount = 0;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCoinCount();
+  }
+
+  Future<void> _fetchCoinCount() async {
+    try {
+      final supabase = Supabase.instance.client;
+      final userId = supabase.auth.currentUser?.id;
+      if (userId == null) return;
+
+      final data = await supabase
+          .from('happy_coins')
+          .select('id')
+          .eq('user_id', userId);
+
+      if (mounted) {
+        setState(() {
+          _coinCount = (data as List).length;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print('コイン数取得エラー: $e');
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -41,24 +88,97 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: Drawer(
       backgroundColor: const Color(0xFFFDF7EE),
-      // 🌟 ここにログアウトボタン付きの AppBar を追加しました
+      child: SafeArea(
+        child: ListView(
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(20),
+              child: Text(
+                "メニュー",
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+
+          
+
+            
+
+            const Divider(),
+
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: const Text("ログアウト"),
+              onTap: () async {
+                await Supabase.instance.client.auth.signOut();
+              },
+            ),
+
+            ListTile(
+              leading: const Icon(
+                Icons.delete_forever,
+                color: Colors.red,
+              ),
+              title: const Text(
+                "退会",
+                style: TextStyle(color: Colors.red),
+              ),
+              onTap: () async {
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text("退会しますか？"),
+                    content: const Text(
+                      "アカウントと全てのデータが削除されます。",
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () =>
+                            Navigator.pop(context, false),
+                        child: const Text("キャンセル"),
+                      ),
+                      TextButton(
+                        onPressed: () =>
+                            Navigator.pop(context, true),
+                        child: const Text(
+                          "退会する",
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+
+                if (confirmed == true) {
+                  try {
+                    await Supabase.instance.client.rpc('delete_user');
+                    await Supabase.instance.client.auth.signOut();
+                  } catch (e) {
+                    debugPrint(e.toString());
+                  }
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    
+    ),
+      backgroundColor: const Color(0xFFFDF7EE),
       appBar: AppBar(
         backgroundColor: const Color(0xFFFDF7EE),
         elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout, color: Color(0xFF4A4A4A)),
-            onPressed: () async {
-              await Supabase.instance.client.auth.signOut();
-            },
-          ),
-        ],
+        iconTheme: const IconThemeData(color: Color(0xFF4A4A4A)),
+
+        
       ),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 20), // 少し調整
               const SizedBox(height: 10),
@@ -72,6 +192,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 16),
+              const SizedBox(height: 20),
+              const Text('貯まったコイン', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF4A4A4A))),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -202,6 +324,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
               const SizedBox(height: 40),
+                  const Icon(Icons.monetization_on, color: Colors.amber, size: 40),
+                  _isLoading
+                      ? const CircularProgressIndicator()
+                      : Text('$_coinCount', style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w900)),
+                  const Text('枚', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                ],
+              ),
+              const SizedBox(height: 30),
+              PiggyBankCard(currentCoins: _coinCount), // あやかさんの描画用カード
             ],
           ),
         ),
@@ -320,6 +451,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
+
 class PiggyBankCard extends StatelessWidget {
   const PiggyBankCard({
     super.key,
@@ -337,10 +469,14 @@ class PiggyBankCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
+      // 1_home.dart の退会ボタンの onTap を以下のようにします
+      // 1_home.dart の退会ボタンの onTap をこれに差し替えてください
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const CollectionScreen()),
+          MaterialPageRoute(
+            builder: (_) => const CollectionScreen(),
+          ),
         );
       },
       child: Container(
@@ -373,46 +509,56 @@ class PiggyBankCard extends StatelessWidget {
                   Positioned(
                     right: 16,
                     bottom: 16,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.95),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const CollectionScreen(),
                           ),
-                        ],
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.auto_awesome_rounded,
-                            color: Color(0xFFF06292),
-                            size: 16,
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            'コレクションを見る',
-                            style: TextStyle(
-                              color: Color(0xFF4A4A4A),
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.95),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.08),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
                             ),
-                          ),
-                          SizedBox(width: 2),
-                          Icon(
-                            Icons.chevron_right_rounded,
-                            color: Colors.grey,
-                            size: 16,
-                          ),
-                        ],
+                          ],
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.auto_awesome_rounded,
+                              color: Color(0xFFF06292),
+                              size: 16,
+                            ),
+                            SizedBox(width: 4),
+                            Text(
+                              'コレクションを見る',
+                              style: TextStyle(
+                                color: Color(0xFF4A4A4A),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                            SizedBox(width: 2),
+                            Icon(
+                              Icons.chevron_right_rounded,
+                              color: Colors.grey,
+                              size: 16,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),

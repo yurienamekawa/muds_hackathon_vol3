@@ -60,9 +60,10 @@ class _PiggyBankTransitionScreenState extends State<PiggyBankTransitionScreen>
     _controller.forward();
 
     // Automatically navigate back to home after animation completes
+    // initState 内の addStatusListener をこう修正してください
     _controller.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
-        // Pop all routes until the first one (which should be the home screen)
+        // 戻るときに、今のコイン数（widget.currentCoins）をホームへ知らせる
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
     });

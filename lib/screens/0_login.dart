@@ -16,6 +16,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isSignUp = false;
   bool _isLoading = false;
   String? _errorText;
+  String? _infoText;
 
   @override
   void dispose() {
@@ -38,6 +39,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() {
       _isLoading = true;
       _errorText = null;
+      _infoText = null;
     });
 
     try {
@@ -65,23 +67,45 @@ class _LoginScreenState extends State<LoginScreen> {
         }
         return;
       }
+      final client = Supabase.instance.client;
 
-      if (_isSignUp && response.user != null && response.user!.email != null) {
-        setState(() {
-          _errorText = '登録に成功しました。ログインしてください。';
-          _isSignUp = false;
-        });
+      if (_isSignUp) {
+        final response = await client.auth.signUp(
+          email: email,
+          password: password,
+        );
+
+        if (response.user != null) {
+          try {
+            await client.from('users').insert({
+              'id': response.user!.id,
+              'user_name': email,
+            });
+          } catch (e) {
+            debugPrint('usersテーブルへの保存に失敗: $e');
+          }
+        }
+
+        if (mounted) {
+          setState(() {
+            _infoText = '認証メールを送信しました。メールボックスをご確認ください。';
+            _errorText = null;
+            _isSignUp = false;
+          });
+        }
       } else {
-        setState(() {
-          _errorText = _isSignUp
-              ? 'アカウント作成に失敗しました。すでに登録済みの可能性があります。'
-              : 'ログインに失敗しました。メールアドレスとパスワードを確認してください。';
-        });
+        await client.auth.signInWithPassword(
+          email: email,
+          password: password,
+        );
       }
     } catch (e) {
-      setState(() {
-        _errorText = 'エラーが発生しました: $e';
-      });
+      if (mounted) {
+        setState(() {
+          _errorText = _messageFromException(e);
+          _infoText = null;
+        });
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -89,6 +113,31 @@ class _LoginScreenState extends State<LoginScreen> {
         });
       }
     }
+  }
+
+  String _messageFromException(Object e) {
+    final message = e.toString().toLowerCase();
+
+    if (message.contains('invalid login credentials') ||
+        message.contains('invalid_credentials')) {
+      return 'メールアドレスまたはパスワードが正しくありません。';
+    }
+
+    if (message.contains('email not confirmed') ||
+        message.contains('email_not_confirmed')) {
+      return 'メール認証が完了していません。受信箱をご確認ください。';
+    }
+
+    if (message.contains('user already registered') ||
+        message.contains('user_already_exists')) {
+      return 'このメールアドレスはすでに登録されています。';
+    }
+
+    if (message.contains('password') && message.contains('weak')) {
+      return 'パスワードは6文字以上で設定してください。';
+    }
+
+    return 'ログインに失敗しました。入力内容を確認してください。';
   }
 
   @override
@@ -140,12 +189,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     border: OutlineInputBorder(),
                   ),
                 ),
-                if (_errorText != null) ...[
+                if (_errorText != null || _infoText != null) ...[
                   const SizedBox(height: 16),
                   Text(
-                    _errorText!,
-                    style: const TextStyle(
-                      color: Colors.redAccent,
+                    _errorText ?? _infoText ?? '',
+                    style: TextStyle(
+                      color: _errorText != null ? Colors.redAccent : const Color(0xFF2E7D32),
                       fontSize: 14,
                     ),
                     textAlign: TextAlign.center,
@@ -166,9 +215,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           height: 20,
                           width: 20,
                           child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                             strokeWidth: 2,
                           ),
                         )
@@ -177,6 +224,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
+                            color: Colors.white,
                           ),
                         ),
                 ),
@@ -188,6 +236,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           setState(() {
                             _isSignUp = !_isSignUp;
                             _errorText = null;
+                            _infoText = null;
                           });
                         },
                   style: OutlinedButton.styleFrom(
