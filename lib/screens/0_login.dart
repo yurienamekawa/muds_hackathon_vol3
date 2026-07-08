@@ -16,6 +16,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isSignUp = false;
   bool _isLoading = false;
   String? _errorText;
+  String? _infoText;
 
   @override
   void dispose() {
@@ -38,42 +39,49 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() {
       _isLoading = true;
       _errorText = null;
+      _infoText = null;
     });
 
     try {
       final client = Supabase.instance.client;
 
       if (_isSignUp) {
-        // 新規登録を実行
         final response = await client.auth.signUp(
           email: email,
           password: password,
         );
 
-        // 登録成功かつユーザー情報が取得できたら、usersテーブルにも行を追加
         if (response.user != null) {
-          await client.from('users').insert({
-            'id': response.user!.id,
-            'user_name': email,
-          });
+          try {
+            await client.from('users').insert({
+              'id': response.user!.id,
+              'user_name': email,
+            });
+          } catch (e) {
+            debugPrint('usersテーブルへの保存に失敗: $e');
+          }
         }
 
-        setState(() {
-          _errorText = '登録完了！ログインしてください。';
-          _isSignUp = false;
-        });
+        if (mounted) {
+          setState(() {
+            _infoText = '認証メールを送信しました。メールボックスをご確認ください。';
+            _errorText = null;
+            _isSignUp = false;
+          });
+        }
       } else {
-        // ログインを実行
         await client.auth.signInWithPassword(
           email: email,
           password: password,
         );
-        // ログイン成功時は、main.dart の StreamBuilder が自動でホーム画面へ切り替えます
       }
     } catch (e) {
-      setState(() {
-        _errorText = 'エラーが発生しました: $e';
-      });
+      if (mounted) {
+        setState(() {
+          _errorText = _messageFromException(e);
+          _infoText = null;
+        });
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -81,6 +89,31 @@ class _LoginScreenState extends State<LoginScreen> {
         });
       }
     }
+  }
+
+  String _messageFromException(Object e) {
+    final message = e.toString().toLowerCase();
+
+    if (message.contains('invalid login credentials') ||
+        message.contains('invalid_credentials')) {
+      return 'メールアドレスまたはパスワードが正しくありません。';
+    }
+
+    if (message.contains('email not confirmed') ||
+        message.contains('email_not_confirmed')) {
+      return 'メール認証が完了していません。受信箱をご確認ください。';
+    }
+
+    if (message.contains('user already registered') ||
+        message.contains('user_already_exists')) {
+      return 'このメールアドレスはすでに登録されています。';
+    }
+
+    if (message.contains('password') && message.contains('weak')) {
+      return 'パスワードは6文字以上で設定してください。';
+    }
+
+    return 'ログインに失敗しました。入力内容を確認してください。';
   }
 
   @override
@@ -132,12 +165,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     border: OutlineInputBorder(),
                   ),
                 ),
-                if (_errorText != null) ...[
+                if (_errorText != null || _infoText != null) ...[
                   const SizedBox(height: 16),
                   Text(
-                    _errorText!,
-                    style: const TextStyle(
-                      color: Colors.redAccent,
+                    _errorText ?? _infoText ?? '',
+                    style: TextStyle(
+                      color: _errorText != null ? Colors.redAccent : const Color(0xFF2E7D32),
                       fontSize: 14,
                     ),
                     textAlign: TextAlign.center,
@@ -179,6 +212,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           setState(() {
                             _isSignUp = !_isSignUp;
                             _errorText = null;
+                            _infoText = null;
                           });
                         },
                   style: OutlinedButton.styleFrom(
