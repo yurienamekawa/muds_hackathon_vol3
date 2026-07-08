@@ -233,6 +233,49 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     );
   }
 
+  Widget _buildSummaryCard() {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      elevation: 0,
+      color: Colors.white,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              '今日の記録✏️',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '本日保存した数: $_todayCount 件',
+              style: const TextStyle(fontSize: 14, color: Color(0xFF4A4A4A)),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'これまでの記録: $_totalEntries 件',
+              style: const TextStyle(fontSize: 14, color: Color(0xFF4A4A4A)),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF3F8EE),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Text(
+                _insightMessage,
+                style: const TextStyle(color: Color(0xFF4A4A4A), height: 1.5),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildContributionCard() {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
@@ -244,12 +287,12 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              '記録の継続グラフ',
+              '記録の継続グラフ📈',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             const Text(
-              '今日の記録数に応じて草が育ちます。',
+              '今日の記録数に応じて草🌱が育ちます。',
               style: TextStyle(fontSize: 14, color: Color(0xFF6B6B6B)),
             ),
             const SizedBox(height: 16),
@@ -281,7 +324,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              '感情のバランス',
+              '感情のバランス📊',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
@@ -319,6 +362,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          children: const [
+            Text(
+              'AIからのメッセージ💌',
           children: [
             const Text(
               'AIからのメッセージ',

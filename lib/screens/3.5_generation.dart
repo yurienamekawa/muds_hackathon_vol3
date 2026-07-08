@@ -77,6 +77,19 @@ class _PiggyBankTransitionScreenState extends State<PiggyBankTransitionScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Determine TimeOfDayTheme based on current hour
+    final hour = DateTime.now().hour;
+    TimeOfDayTheme theme;
+    if (hour >= 5 && hour < 10) {
+      theme = TimeOfDayTheme.morning;
+    } else if (hour >= 10 && hour < 16) {
+      theme = TimeOfDayTheme.day;
+    } else if (hour >= 16 && hour < 19) {
+      theme = TimeOfDayTheme.evening;
+    } else {
+      theme = TimeOfDayTheme.night;
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFFDF7EE),
       body: SafeArea(
@@ -103,7 +116,7 @@ class _PiggyBankTransitionScreenState extends State<PiggyBankTransitionScreen>
               builder: (context, child) {
                 return IgnorePointer(
                   child: PiggyBankCard(
-                    // Show current coins (the new one will just fade in there after return)
+                    theme: theme, // Sync background with home screen
                     currentCoins: widget.currentCoins,
                     showCollectionButton: false, // 落下演出中はボタンを隠す
                     fallingCoin: Positioned(
