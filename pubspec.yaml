@@ -39,6 +39,7 @@ dependencies:
   fl_chart: ^0.68.0
   rive: ^0.13.11
   google_generative_ai: ^0.4.7
+  sensors_plus: ^7.1.0
 
 dev_dependencies:
   flutter_test:

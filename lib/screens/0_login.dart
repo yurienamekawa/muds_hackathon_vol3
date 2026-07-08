@@ -43,6 +43,30 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
+      final response = _isSignUp
+          ? await Supabase.instance.client.auth.signUp(
+              email: email,
+              password: password,
+            )
+          : await Supabase.instance.client.auth.signInWithPassword(
+              email: email,
+              password: password,
+            );
+
+      // デバッグ: Supabaseのレスポンスをコンソールに出力
+      // 実行端末のログ（flutter run）で確認してください。
+      // ignore: avoid_print
+      print('Supabase auth response: $response');
+
+      if (response.session != null) {
+        // セッションが取得できればログイン成功
+        if (mounted) {
+          setState(() {
+            _errorText = null;
+          });
+        }
+        return;
+      }
       final client = Supabase.instance.client;
 
       if (_isSignUp) {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import '5_collection.dart';
 import '3.5_generation.dart';
+import '../services/db_service.dart';
 
 class GenerationScreen extends StatefulWidget {
   final Map<String, dynamic>? aiResult;
@@ -22,6 +23,7 @@ class _GenerationScreenState extends State<GenerationScreen>
   late final Animation<double> _coinOpacityAnimation;
 
   late final Map<String, dynamic> dummyCategory;
+  int _todayCoins = 1;
 
   static const Map<String, IconData> _coinIconMap = {
     'heart_pink': Icons.favorite,
@@ -126,6 +128,15 @@ class _GenerationScreenState extends State<GenerationScreen>
           ),
         );
 
+    // Fetch today's coin count from Supabase
+    DbService.getTodayCoinCount().then((count) {
+      if (mounted) {
+        setState(() {
+          _todayCoins = count;
+        });
+      }
+    });
+
     // 演出完了後、少し待ってから自動的にトランジション画面へ遷移
     Future.delayed(const Duration(milliseconds: 3500), () {
       if (mounted) {
@@ -134,7 +145,7 @@ class _GenerationScreenState extends State<GenerationScreen>
           MaterialPageRoute(
             builder: (context) => PiggyBankTransitionScreen(
               coinCategory: dummyCategory,
-              currentCoins: 7,
+              currentCoins: _todayCoins,
             ),
           ),
         );
