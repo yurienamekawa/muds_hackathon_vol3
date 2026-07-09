@@ -174,9 +174,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           },
                           child: GlassPiggyBank(
                             currentCoins: _coinCount,
+                            theme: _currentTheme,
                             coinRecords: _coinRecords,
                           ),
-                        ),
+
                       ),
                       // Mindmap Button
                       Positioned(
@@ -410,6 +411,7 @@ class PiggyBankCard extends StatelessWidget {
                       currentCoins: currentCoins,
                       fallingCoin: fallingCoin,
                       coinRecords: coinRecords,
+                      theme: theme,
                     ),
                   ),
                 ),
@@ -518,493 +520,221 @@ class PiggyBankCard extends StatelessWidget {
 class PiggyBankBackgroundPainter extends CustomPainter {
   final TimeOfDayTheme theme;
   PiggyBankBackgroundPainter({required this.theme});
-  @override
+
   @override
   void paint(Canvas canvas, Size size) {
-    List<Color> skyColors;
-    Color distantHillColor;
-    Color treeTrunkColor;
-    Color treeLeafColor;
-    Color treeLeafHighlight;
-    Color groundMainColor;
-    Color groundGradientColor;
-    Color shadowColor;
-    Color bushColor;
-    Color daisyColor;
-    Color blueFlowerColor;
-    Color redFlowerColor;
-    Color tulipColor;
-    Color sparkleColor;
-    Color heartColor;
+    Color skyTop;
+    Color skyBottom;
+    Color leftHillColor;
+    Color rightHillColor;
+    Color groundColor;
+    Color treeTrunkColor = const Color(0xFF5D4037);
+    Color treeColor;
+    Color treeShadowColor;
+    Color groundSpotColor;
+    bool showMoonAndStars = false;
 
     switch (theme) {
       case TimeOfDayTheme.morning:
-        skyColors = [const Color(0xFFFFF7E0), const Color(0xFFFFE5C4)];
-        distantHillColor = const Color(0xFFC5E1A5);
-        treeTrunkColor = const Color(0xFFA1887F);
-        treeLeafColor = const Color(0xFFAED581);
-        treeLeafHighlight = const Color(0xFFC5E1A5).withValues(alpha: 0.8);
-        groundMainColor = const Color(0xFFA5D6A7);
-        groundGradientColor = const Color(0xFF81C784);
-        shadowColor = Colors.black.withValues(alpha: 0.08);
-        bushColor = const Color(0xFF66BB6A);
-        daisyColor = Colors.white.withValues(alpha: 0.85);
-        blueFlowerColor = const Color(0xFF90CAF9);
-        redFlowerColor = const Color(0xFFEF9A9A);
-        tulipColor = const Color(0xFFFFB74D);
-        sparkleColor = Colors.white;
-        heartColor = const Color(0xFFF06292);
+        skyTop = const Color(0xFFF7D1D6);
+        skyBottom = const Color(0xFFFBF1CA);
+        leftHillColor = const Color(0xFFC5E1A5);
+        rightHillColor = const Color(0xFFAED581);
+        groundColor = const Color(0xFF81C784);
+        treeColor = const Color(0xFF9CCC65);
+        treeShadowColor = const Color(0xFF7CB342).withValues(alpha: 0.5);
+        groundSpotColor = Colors.white.withValues(alpha: 0.6);
         break;
       case TimeOfDayTheme.day:
-        skyColors = [
-          const Color(0xFFE1F5FE),
-          const Color(0xFFFFF9C4),
-        ]; // Light blue to pale yellow
-        distantHillColor = const Color(0xFFAED581); // Slightly more vibrant
-        treeTrunkColor = const Color(0xFF8D6E63);
-        treeLeafColor = const Color(0xFF81C784);
-        treeLeafHighlight = const Color(0xFFAED581).withValues(alpha: 0.8);
-        groundMainColor = const Color(0xFF81C784);
-        groundGradientColor = const Color(0xFF66BB6A);
-        shadowColor = Colors.black.withValues(alpha: 0.1);
-        bushColor = const Color(0xFF4CAF50);
-        daisyColor = Colors.white.withValues(alpha: 0.9);
-        blueFlowerColor = const Color(0xFF64B5F6);
-        redFlowerColor = const Color(0xFFE57373);
-        tulipColor = const Color(0xFFFFA726);
-        sparkleColor = Colors.white;
-        heartColor = const Color(0xFFEC407A);
+        skyTop = const Color(0xFF90CAF9);
+        skyBottom = const Color(0xFFFFF59D);
+        leftHillColor = const Color(0xFF689F38);
+        rightHillColor = const Color(0xFF558B2F);
+        groundColor = const Color(0xFF33691E);
+        treeColor = const Color(0xFF7CB342);
+        treeShadowColor = const Color(0xFF33691E).withValues(alpha: 0.5);
+        groundSpotColor = const Color(0xFF9CCC65).withValues(alpha: 0.5);
         break;
       case TimeOfDayTheme.evening:
-        skyColors = [
-          const Color(0xFFEF5350),
-          const Color(0xFFFFB74D),
-        ]; // Red to orange
-        distantHillColor = const Color(0xFF8D6E63); // Brownish
-        treeTrunkColor = const Color(0xFF5D4037);
-        treeLeafColor = const Color(0xFF795548);
-        treeLeafHighlight = const Color(0xFF8D6E63).withValues(alpha: 0.8);
-        groundMainColor = const Color(0xFF795548);
-        groundGradientColor = const Color(0xFF5D4037);
-        shadowColor = Colors.black.withValues(alpha: 0.2);
-        bushColor = const Color(0xFF4E342E);
-        daisyColor = const Color(0xFFFFE0B2).withValues(alpha: 0.8);
-        blueFlowerColor = const Color(0xFFCE93D8);
-        redFlowerColor = const Color(0xFFD32F2F);
-        tulipColor = const Color(0xFFFF7043);
-        sparkleColor = const Color(0xFFFFCC80);
-        heartColor = const Color(0xFFC2185B);
+        skyTop = const Color(0xFFE53935);
+        skyBottom = const Color(0xFFFFB300);
+        leftHillColor = const Color(0xFF4E342E);
+        rightHillColor = const Color(0xFF3E2723);
+        groundColor = const Color(0xFF263238);
+        treeColor = const Color(0xFF5D4037);
+        treeShadowColor = Colors.black.withValues(alpha: 0.4);
+        groundSpotColor = const Color(0xFFFFB300).withValues(alpha: 0.3);
         break;
       case TimeOfDayTheme.night:
-        skyColors = [
-          const Color(0xFF1A237E),
-          const Color(0xFF3949AB),
-        ]; // Dark navy
-        distantHillColor = const Color(0xFF283593);
-        treeTrunkColor = const Color(0xFF1A237E);
-        treeLeafColor = const Color(0xFF303F9F);
-        treeLeafHighlight = const Color(0xFF3949AB).withValues(alpha: 0.8);
-        groundMainColor = const Color(0xFF283593);
-        groundGradientColor = const Color(0xFF1A237E);
-        shadowColor = Colors.black.withValues(alpha: 0.3);
-        bushColor = const Color(0xFF1A237E);
-        daisyColor = Colors.white.withValues(alpha: 0.4);
-        blueFlowerColor = const Color(0xFF5C6BC0);
-        redFlowerColor = const Color(0xFF7986CB);
-        tulipColor = const Color(0xFF5C6BC0);
-        sparkleColor = const Color(0xFFFFF59D); // Yellow fireflies
-        heartColor = const Color(0xFF9FA8DA);
+        skyTop = const Color(0xFF283593);
+        skyBottom = const Color(0xFF3949AB);
+        leftHillColor = const Color(0xFF1A237E);
+        rightHillColor = const Color(0xFF151B54);
+        groundColor = const Color(0xFF0D47A1);
+        treeColor = const Color(0xFF283593);
+        treeShadowColor = Colors.black.withValues(alpha: 0.5);
+        groundSpotColor = Colors.white.withValues(alpha: 0.2);
+        showMoonAndStars = true;
         break;
     }
 
-    // 1. Sky Gradient
-    final skyGradient = LinearGradient(
-      begin: Alignment.topCenter,
-      end: Alignment.bottomCenter,
-      colors: skyColors,
-      stops: const [0.0, 1.0],
-    );
+    // 1. Sky
+    final skyRect = Rect.fromLTWH(0, 0, size.width, size.height);
     canvas.drawRect(
-      Rect.fromLTWH(0, 0, size.width, size.height * 0.5),
+      skyRect,
       Paint()
-        ..shader = skyGradient.createShader(
-          Rect.fromLTWH(0, 0, size.width, size.height * 0.5),
-        ),
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [skyTop, skyBottom],
+          stops: const [0.0, 0.7],
+        ).createShader(skyRect),
     );
 
-    // Draw Sun or Moon
-    if (theme == TimeOfDayTheme.morning || theme == TimeOfDayTheme.evening) {
-      // Glow
-      canvas.drawCircle(
-        Offset(size.width * 0.25, size.height * 0.4),
-        size.width * 0.3,
-        Paint()
-          ..color = const Color(0xFFFFF9C4).withValues(alpha: 0.2)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 20),
-      );
-      // Sun
-      canvas.drawCircle(
-        Offset(size.width * 0.25, size.height * 0.45),
-        size.width * 0.15,
-        Paint()..color = const Color(0xFFFFF9C4).withValues(alpha: 0.8),
-      );
-    } else if (theme == TimeOfDayTheme.day) {
-      // High Sun
-      canvas.drawCircle(
-        Offset(size.width * 0.5, size.height * 0.3),
-        size.width * 0.25,
-        Paint()
-          ..color = Colors.white.withValues(alpha: 0.4)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 25),
-      );
-    } else if (theme == TimeOfDayTheme.night) {
+    // 2. Stars and Moon (if night)
+    if (showMoonAndStars) {
       // Moon
-      canvas.drawCircle(
-        Offset(size.width * 0.8, size.height * 0.15),
-        size.width * 0.08,
-        Paint()..color = const Color(0xFFFFF9C4),
-      );
-      // Moon inner cut out to make it crescent
-      canvas.drawCircle(
-        Offset(size.width * 0.77, size.height * 0.13),
-        size.width * 0.08,
-        Paint()..color = skyColors[0],
-      );
+      final moonOuter = Path()
+        ..addOval(Rect.fromCircle(center: Offset(size.width * 0.85, size.height * 0.15), radius: size.width * 0.07));
+      final moonInner = Path()
+        ..addOval(Rect.fromCircle(center: Offset(size.width * 0.82, size.height * 0.12), radius: size.width * 0.065));
+      final moonPath = Path.combine(PathOperation.difference, moonOuter, moonInner);
+      
+      canvas.drawPath(moonPath, Paint()..color = const Color(0xFFFFF59D));
+
+      // Stars
+      void drawStar(Offset center) {
+        final path = Path();
+        path.moveTo(center.dx, center.dy - 6);
+        path.quadraticBezierTo(center.dx, center.dy, center.dx + 6, center.dy);
+        path.quadraticBezierTo(center.dx, center.dy, center.dx, center.dy + 6);
+        path.quadraticBezierTo(center.dx, center.dy, center.dx - 6, center.dy);
+        path.quadraticBezierTo(center.dx, center.dy, center.dx, center.dy - 6);
+        canvas.drawPath(path, Paint()..color = const Color(0xFFFFF9C4));
+      }
+      drawStar(Offset(size.width * 0.1, size.height * 0.2));
+      drawStar(Offset(size.width * 0.9, size.height * 0.4));
+      drawStar(Offset(size.width * 0.2, size.height * 0.6));
+      drawStar(Offset(size.width * 0.8, size.height * 0.8));
     }
 
-    // 2. Distant Hills (Background)
-    final distantHillPaint = Paint()..color = distantHillColor;
-    // Left distant hill
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(size.width * 0.2, size.height * 0.45),
-        width: size.width * 0.8,
-        height: size.height * 0.3,
-      ),
-      distantHillPaint,
-    );
-    // Right distant hill
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(size.width * 0.8, size.height * 0.45),
-        width: size.width * 0.8,
-        height: size.height * 0.3,
-      ),
-      distantHillPaint,
-    );
-
-    // 3. Trees
-    void drawTree(Offset pos, double scale) {
-      // Trunk
-      canvas.drawRect(
-        Rect.fromCenter(
-          center: pos + Offset(0, 15 * scale),
-          width: 6 * scale,
-          height: 20 * scale,
-        ),
-        Paint()..color = treeTrunkColor,
-      );
-      // Leaves (round)
-      canvas.drawCircle(pos, 18 * scale, Paint()..color = treeLeafColor);
-      // Highlight on leaves
-      canvas.drawCircle(
-        pos + Offset(-4 * scale, -4 * scale),
-        8 * scale,
-        Paint()..color = treeLeafHighlight,
-      );
+    // Fireflies / Sparkles for Day/Morning/Evening
+    if (!showMoonAndStars) {
+      void drawSparkle(Offset center, Color c) {
+        final path = Path();
+        path.moveTo(center.dx, center.dy - 4);
+        path.quadraticBezierTo(center.dx, center.dy, center.dx + 4, center.dy);
+        path.quadraticBezierTo(center.dx, center.dy, center.dx, center.dy + 4);
+        path.quadraticBezierTo(center.dx, center.dy, center.dx - 4, center.dy);
+        path.quadraticBezierTo(center.dx, center.dy, center.dx, center.dy - 4);
+        canvas.drawPath(path, Paint()..color = c);
+      }
+      final sColor = theme == TimeOfDayTheme.evening ? const Color(0xFFFFCC80) : Colors.white;
+      drawSparkle(Offset(size.width * 0.15, size.height * 0.3), sColor);
+      drawSparkle(Offset(size.width * 0.85, size.height * 0.25), sColor);
+      drawSparkle(Offset(size.width * 0.75, size.height * 0.5), sColor);
     }
 
-    drawTree(Offset(size.width * 0.1, size.height * 0.35), 1.2);
-    drawTree(Offset(size.width * 0.22, size.height * 0.38), 0.8);
-    drawTree(Offset(size.width * 0.88, size.height * 0.32), 1.4);
+    // 3. Background Hills
+    // Right hill (behind left hill)
+    final rightHillPath = Path();
+    rightHillPath.moveTo(size.width, size.height * 0.25);
+    rightHillPath.quadraticBezierTo(size.width * 0.5, size.height * 0.25, 0, size.height * 0.45);
+    rightHillPath.lineTo(0, size.height);
+    rightHillPath.lineTo(size.width, size.height);
+    canvas.drawPath(rightHillPath, Paint()..color = rightHillColor);
 
-    // 4. Main Ground (Mid-ground)
+    // Left hill
+    final leftHillPath = Path();
+    leftHillPath.moveTo(0, size.height * 0.25);
+    leftHillPath.quadraticBezierTo(size.width * 0.6, size.height * 0.2, size.width, size.height * 0.45);
+    leftHillPath.lineTo(size.width, size.height);
+    leftHillPath.lineTo(0, size.height);
+    canvas.drawPath(leftHillPath, Paint()..color = leftHillColor);
+
+    // 4. Ground (Foreground)
     final groundPath = Path();
-    groundPath.moveTo(0, size.height * 0.45);
-    groundPath.quadraticBezierTo(
-      size.width * 0.5,
-      size.height * 0.4,
-      size.width,
-      size.height * 0.42,
-    );
+    groundPath.moveTo(0, size.height * 0.4);
+    groundPath.quadraticBezierTo(size.width * 0.5, size.height * 0.35, size.width, size.height * 0.4);
     groundPath.lineTo(size.width, size.height);
     groundPath.lineTo(0, size.height);
-    groundPath.close();
+    canvas.drawPath(groundPath, Paint()..color = groundColor);
 
-    canvas.drawPath(groundPath, Paint()..color = groundMainColor);
+    // Shadow on ground for depth (overall background gradient)
+    final shadowPath = Path();
+    shadowPath.moveTo(0, size.height * 0.45);
+    shadowPath.quadraticBezierTo(size.width * 0.5, size.height * 0.4, size.width, size.height * 0.45);
+    shadowPath.lineTo(size.width, size.height * 0.6);
+    shadowPath.quadraticBezierTo(size.width * 0.5, size.height * 0.55, 0, size.height * 0.6);
+    canvas.drawPath(shadowPath, Paint()..color = Colors.black.withValues(alpha: 0.1));
 
-    // Add a darker green gradient towards the bottom
-    final groundGradient = LinearGradient(
-      begin: Alignment.topCenter,
-      end: Alignment.bottomCenter,
-      colors: [groundMainColor.withValues(alpha: 0.0), groundGradientColor],
-    );
-    canvas.drawPath(
-      groundPath,
-      Paint()
-        ..shader = groundGradient.createShader(
-          Rect.fromLTWH(0, size.height * 0.6, size.width, size.height * 0.4),
-        ),
-    );
-
-    // 5. Shadow under the pig
+    // Shadow directly under the piggy bank to anchor it and fill the bottom space
     canvas.drawOval(
       Rect.fromCenter(
-        center: Offset(size.width * 0.5, size.height * 0.85),
-        width: size.width * 0.7,
-        height: size.height * 0.15,
+        center: Offset(size.width * 0.5, size.height * 0.8),
+        width: size.width * 0.6,
+        height: size.height * 0.12,
       ),
       Paint()
-        ..color = shadowColor
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10),
+        ..color = Colors.black.withValues(alpha: 0.15)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12),
     );
 
-    // 6. Foreground Bushes
-    final bushPaint = Paint()..color = bushColor;
+    // Ground spots (small floating petals or grass spots) - spread them out more
+    canvas.drawOval(Rect.fromCenter(center: Offset(size.width * 0.1, size.height * 0.48), width: 6, height: 12), Paint()..color = groundSpotColor);
+    canvas.drawOval(Rect.fromCenter(center: Offset(size.width * 0.9, size.height * 0.52), width: 6, height: 12), Paint()..color = groundSpotColor);
+    canvas.drawOval(Rect.fromCenter(center: Offset(size.width * 0.25, size.height * 0.68), width: 6, height: 12), Paint()..color = groundSpotColor);
+    canvas.drawOval(Rect.fromCenter(center: Offset(size.width * 0.75, size.height * 0.62), width: 6, height: 12), Paint()..color = groundSpotColor);
+    canvas.drawOval(Rect.fromCenter(center: Offset(size.width * 0.15, size.height * 0.82), width: 7, height: 14), Paint()..color = groundSpotColor);
+    canvas.drawOval(Rect.fromCenter(center: Offset(size.width * 0.85, size.height * 0.78), width: 7, height: 14), Paint()..color = groundSpotColor);
 
-    // Bottom-left bushes
-    canvas.drawCircle(
-      Offset(size.width * 0.0, size.height * 0.95),
-      size.width * 0.2,
-      bushPaint,
-    );
-    canvas.drawCircle(
-      Offset(size.width * 0.15, size.height * 1.0),
-      size.width * 0.15,
-      bushPaint,
-    );
-    canvas.drawCircle(
-      Offset(size.width * 0.3, size.height * 1.05),
-      size.width * 0.15,
-      bushPaint,
-    );
-
-    // Bottom-right bushes
-    canvas.drawCircle(
-      Offset(size.width * 1.0, size.height * 0.92),
-      size.width * 0.25,
-      bushPaint,
-    );
-    canvas.drawCircle(
-      Offset(size.width * 0.85, size.height * 1.0),
-      size.width * 0.18,
-      bushPaint,
-    );
-    canvas.drawCircle(
-      Offset(size.width * 0.7, size.height * 1.05),
-      size.width * 0.15,
-      bushPaint,
-    );
-
-    // 7. Flowers
-    void drawFlower(
-      Offset pos,
-      double sizeParam,
-      Color petalColor, {
-      bool hasStem = false,
-    }) {
-      if (hasStem) {
-        // Draw stem
-        final stemPath = Path();
-        stemPath.moveTo(pos.dx, pos.dy);
-        stemPath.quadraticBezierTo(
-          pos.dx - 5,
-          pos.dy + 15,
-          pos.dx + 2,
-          pos.dy + 30,
-        );
-        canvas.drawPath(
-          stemPath,
-          Paint()
-            ..color = distantHillColor
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 2,
-        );
-        // Draw leaf
-        canvas.drawOval(
-          Rect.fromCenter(
-            center: pos + const Offset(-6, 15),
-            width: 8,
-            height: 4,
-          ),
-          Paint()..color = distantHillColor,
-        );
-      }
-
-      final petalPaint = Paint()..color = petalColor;
-      for (int i = 0; i < 5; i++) {
-        final angle = (i * 2 * math.pi) / 5;
-        final cx = pos.dx + math.cos(angle) * sizeParam * 0.6;
-        final cy = pos.dy + math.sin(angle) * sizeParam * 0.6;
-        canvas.drawCircle(Offset(cx, cy), sizeParam * 0.5, petalPaint);
-      }
-      // Center
-      canvas.drawCircle(
-        pos,
-        sizeParam * 0.4,
-        Paint()..color = const Color(0xFFFFCA28),
+    // 5. Trees
+    void drawTree(Offset pos, double scale) {
+      canvas.drawRect(
+        Rect.fromCenter(center: pos + Offset(0, 15 * scale), width: 8 * scale, height: 25 * scale),
+        Paint()..color = treeTrunkColor,
       );
+      // Main circle
+      canvas.drawCircle(pos, 22 * scale, Paint()..color = treeColor);
+      // Inner shadow
+      canvas.drawCircle(pos + Offset(0, 4 * scale), 16 * scale, Paint()..color = treeShadowColor);
     }
 
-    // White daisies
-    drawFlower(Offset(size.width * 0.15, size.height * 0.6), 6, daisyColor);
-    drawFlower(Offset(size.width * 0.85, size.height * 0.5), 5, daisyColor);
-    drawFlower(Offset(size.width * 0.2, size.height * 0.8), 8, daisyColor);
+    drawTree(Offset(size.width * 0.08, size.height * 0.28), 1.0);
+    drawTree(Offset(size.width * 0.18, size.height * 0.32), 0.7);
+    drawTree(Offset(size.width * 0.82, size.height * 0.30), 0.7);
+    drawTree(Offset(size.width * 0.92, size.height * 0.25), 1.1);
 
-    // Blue flower
-    drawFlower(
-      Offset(size.width * 0.1, size.height * 0.7),
-      9,
-      blueFlowerColor,
-      hasStem: true,
-    );
-
-    // Red flowers
-    drawFlower(
-      Offset(size.width * 0.9, size.height * 0.58),
-      8,
-      redFlowerColor,
-      hasStem: true,
-    );
-    drawFlower(
-      Offset(size.width * 0.92, size.height * 0.75),
-      9,
-      redFlowerColor,
-      hasStem: true,
-    );
-
-    // Tulip/Orange flower
-    void drawTulip(Offset pos, double scale) {
-      final path = Path();
-      path.moveTo(pos.dx, pos.dy + 10 * scale);
-      path.quadraticBezierTo(
-        pos.dx - 8 * scale,
-        pos.dy + 5 * scale,
-        pos.dx - 6 * scale,
-        pos.dy - 5 * scale,
-      );
-      path.quadraticBezierTo(
-        pos.dx - 3 * scale,
-        pos.dy,
-        pos.dx,
-        pos.dy - 8 * scale,
-      );
-      path.quadraticBezierTo(
-        pos.dx + 3 * scale,
-        pos.dy,
-        pos.dx + 6 * scale,
-        pos.dy - 5 * scale,
-      );
-      path.quadraticBezierTo(
-        pos.dx + 8 * scale,
-        pos.dy + 5 * scale,
-        pos.dx,
-        pos.dy + 10 * scale,
-      );
-      canvas.drawPath(path, Paint()..color = tulipColor);
+    // 6. Flowers
+    // Daisy (Left)
+    final daisyPos = Offset(size.width * 0.05, size.height * 0.45);
+    final petalPaint = Paint()..color = const Color(0xFFFFD54F);
+    for (int i = 0; i < 5; i++) {
+      final angle = (i * 2 * math.pi) / 5;
+      canvas.drawCircle(daisyPos + Offset(math.cos(angle) * 7, math.sin(angle) * 7), 5, petalPaint);
     }
+    canvas.drawCircle(daisyPos, 5, Paint()..color = const Color(0xFFFFF9C4));
 
-    drawTulip(Offset(size.width * 0.8, size.height * 0.85), 1.2);
+    // Tulip (Mid-Left)
+    final tulipPos = Offset(size.width * 0.12, size.height * 0.52);
+    final tulipPath = Path();
+    tulipPath.moveTo(tulipPos.dx, tulipPos.dy + 8);
+    tulipPath.quadraticBezierTo(tulipPos.dx - 10, tulipPos.dy + 4, tulipPos.dx - 8, tulipPos.dy - 6);
+    tulipPath.quadraticBezierTo(tulipPos.dx - 4, tulipPos.dy, tulipPos.dx, tulipPos.dy - 8);
+    tulipPath.quadraticBezierTo(tulipPos.dx + 4, tulipPos.dy, tulipPos.dx + 8, tulipPos.dy - 6);
+    tulipPath.quadraticBezierTo(tulipPos.dx + 10, tulipPos.dy + 4, tulipPos.dx, tulipPos.dy + 8);
+    canvas.drawPath(tulipPath, Paint()..color = const Color(0xFFAB47BC)); // Purple tulip
+    // Tulip stem
+    canvas.drawLine(tulipPos + const Offset(0, 8), tulipPos + const Offset(0, 20), Paint()..color = const Color(0xFF81C784)..strokeWidth = 3);
 
-    // Grass blades
-    void drawGrassBlade(Offset pos) {
-      final path = Path();
-      path.moveTo(pos.dx, pos.dy);
-      path.quadraticBezierTo(pos.dx - 2, pos.dy - 8, pos.dx + 2, pos.dy - 12);
-      path.quadraticBezierTo(pos.dx + 4, pos.dy - 6, pos.dx + 2, pos.dy);
-      canvas.drawPath(path, Paint()..color = distantHillColor);
+    // Pink Flower (Right)
+    final pinkPos = Offset(size.width * 0.96, size.height * 0.43);
+    final pinkPetal = Paint()..color = const Color(0xFFF06292);
+    for (int i = 0; i < 5; i++) {
+      final angle = (i * 2 * math.pi) / 5;
+      canvas.drawCircle(pinkPos + Offset(math.cos(angle) * 6, math.sin(angle) * 6), 4.5, pinkPetal);
     }
-
-    drawGrassBlade(Offset(size.width * 0.1, size.height * 0.52));
-    drawGrassBlade(Offset(size.width * 0.25, size.height * 0.55));
-    drawGrassBlade(Offset(size.width * 0.8, size.height * 0.55));
-    drawGrassBlade(Offset(size.width * 0.35, size.height * 0.88));
-
-    // 8. Sparkles (Stars / Fireflies)
-    void drawSparkle(Offset center, double sizeParam, double opacity) {
-      final path = Path();
-      path.moveTo(center.dx, center.dy - sizeParam);
-      path.quadraticBezierTo(
-        center.dx,
-        center.dy,
-        center.dx + sizeParam,
-        center.dy,
-      );
-      path.quadraticBezierTo(
-        center.dx,
-        center.dy,
-        center.dx,
-        center.dy + sizeParam,
-      );
-      path.quadraticBezierTo(
-        center.dx,
-        center.dy,
-        center.dx - sizeParam,
-        center.dy,
-      );
-      path.quadraticBezierTo(
-        center.dx,
-        center.dy,
-        center.dx,
-        center.dy - sizeParam,
-      );
-      path.close();
-
-      canvas.drawPath(
-        path,
-        Paint()
-          ..color = sparkleColor.withValues(alpha: opacity)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1),
-      );
-    }
-
-    if (theme == TimeOfDayTheme.night) {
-      // Fireflies / Stars
-      drawSparkle(Offset(size.width * 0.15, size.height * 0.1), 10, 0.8);
-      drawSparkle(Offset(size.width * 0.1, size.height * 0.4), 6, 0.6);
-      drawSparkle(Offset(size.width * 0.85, size.height * 0.65), 8, 0.7);
-      drawSparkle(Offset(size.width * 0.4, size.height * 0.2), 5, 0.8);
-      drawSparkle(Offset(size.width * 0.7, size.height * 0.4), 7, 0.9);
-      drawSparkle(Offset(size.width * 0.2, size.height * 0.8), 8, 0.6);
-      drawSparkle(Offset(size.width * 0.9, size.height * 0.85), 5, 0.7);
-    } else {
-      drawSparkle(Offset(size.width * 0.15, size.height * 0.1), 10, 0.8);
-      drawSparkle(Offset(size.width * 0.1, size.height * 0.4), 6, 0.6);
-      drawSparkle(Offset(size.width * 0.85, size.height * 0.65), 8, 0.7);
-    }
-
-    // 9. Floating Heart
-    void drawHeart(Offset pos, double scale) {
-      final path = Path();
-      path.moveTo(pos.dx, pos.dy + 4 * scale);
-      path.cubicTo(
-        pos.dx - 5 * scale,
-        pos.dy,
-        pos.dx - 5 * scale,
-        pos.dy - 6 * scale,
-        pos.dx,
-        pos.dy - 2 * scale,
-      );
-      path.moveTo(pos.dx, pos.dy + 4 * scale);
-      path.cubicTo(
-        pos.dx + 5 * scale,
-        pos.dy,
-        pos.dx + 5 * scale,
-        pos.dy - 6 * scale,
-        pos.dx,
-        pos.dy - 2 * scale,
-      );
-      canvas.drawPath(
-        path,
-        Paint()
-          ..color = heartColor
-          ..style = PaintingStyle.fill,
-      );
-    }
-
-    if (theme != TimeOfDayTheme.night) {
-      drawHeart(Offset(size.width * 0.85, size.height * 0.15), 1.5);
-    }
+    canvas.drawCircle(pinkPos, 4, Paint()..color = const Color(0xFFFFCA28));
   }
 
   @override
@@ -1015,11 +745,13 @@ class GlassPiggyBank extends StatefulWidget {
   final int currentCoins;
   final Widget? fallingCoin;
   final List<Map<String, dynamic>> coinRecords;
+  final TimeOfDayTheme? theme;
   const GlassPiggyBank({
     super.key,
     required this.currentCoins,
     this.fallingCoin,
     this.coinRecords = const [],
+    this.theme,
   });
 
   @override
@@ -1098,8 +830,8 @@ class _GlassPiggyBankState extends State<GlassPiggyBank>
       MediaQuery.of(context).size.width * 0.82,
     );
     // 豚らしい横長の楕円形（Oval）のサイズ
-    final double bellyWidth = areaSize * 0.8;
-    final double bellyHeight = areaSize * 0.65;
+    final double bellyWidth = areaSize * 0.85;
+    final double bellyHeight = areaSize * 0.85;
     final double bellyCenterX = areaSize * 0.5;
     final double bellyCenterY = areaSize * 0.5;
 
@@ -1203,18 +935,15 @@ class _GlassPiggyBankState extends State<GlassPiggyBank>
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  // 1. 背面のガラス層
-                  Positioned.fill(
-                    child: CustomPaint(painter: GlassPiggyBankBackPainter()),
-                  ),
 
-                  // 2. コイン層（ガラスからはみ出ないように楕円でクリップ）
+
+                  // 2. コイン層（画像のお腹の形に合わせてクリップ）
                   Positioned.fill(
                     child: ClipPath(
                       clipper: PiggyBankBellyClipper(
-                        center: Offset(bellyCenterX, bellyCenterY),
-                        width: bellyWidth * 0.9,
-                        height: bellyHeight * 0.9,
+                        center: Offset(bellyCenterX, bellyCenterY + areaSize * 0.05),
+                        width: bellyWidth * 0.85,
+                        height: bellyHeight * 0.8,
                       ),
                       child: Stack(clipBehavior: Clip.none, children: coins),
                     ),
@@ -1223,9 +952,27 @@ class _GlassPiggyBankState extends State<GlassPiggyBank>
                   // 落下中のコイン
                   if (widget.fallingCoin != null) widget.fallingCoin!,
 
-                  // 3. 前面のガラス層
+                  // 3. 前面のガラス層（画像を透過して配置し、テーマ色で色付け）
                   Positioned.fill(
-                    child: CustomPaint(painter: GlassPiggyBankFrontPainter()),
+                    child: Builder(
+                      builder: (context) {
+                        Color? tintColor;
+                        if (widget.theme == TimeOfDayTheme.morning) tintColor = const Color(0xFFF7D1D6).withValues(alpha: 0.3);
+                        if (widget.theme == TimeOfDayTheme.day) tintColor = const Color(0xFFFFF59D).withValues(alpha: 0.3);
+                        if (widget.theme == TimeOfDayTheme.evening) tintColor = const Color(0xFFFFB300).withValues(alpha: 0.3);
+                        if (widget.theme == TimeOfDayTheme.night) tintColor = const Color(0xFF3949AB).withValues(alpha: 0.3);
+
+                        return Opacity(
+                          opacity: 0.85, // 中のコインがしっかり見えるように透過
+                          child: Image.asset(
+                            'assets/pig_pig2.png',
+                            fit: BoxFit.contain,
+                            color: tintColor,
+                            colorBlendMode: tintColor != null ? BlendMode.srcATop : null,
+                          ),
+                        );
+                      }
+                    ),
                   ),
                 ],
               ),
@@ -1261,445 +1008,7 @@ class PiggyBankBellyClipper extends CustomClipper<Path> {
 // Pure Code 3D Glass Painters (Pig Shape)
 // ---------------------------------------------------------
 
-/// 貯金箱の背面（後ろの足、後ろの耳、背面のガラス壁）
-class GlassPiggyBankBackPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width * 0.5, size.height * 0.5);
-    final width = size.width * 0.8;
-    final height = size.width * 0.65;
-
-    void drawBackLeg(Offset legCenter) {
-      final legRect = Rect.fromCenter(
-        center: legCenter,
-        width: width * 0.12,
-        height: height * 0.25,
-      );
-      final legRRect = RRect.fromRectAndRadius(
-        legRect,
-        const Radius.circular(15),
-      );
-
-      // 暗めのガラス影
-      canvas.drawRRect(
-        legRRect,
-        Paint()
-          ..color = Colors.black.withValues(alpha: 0.1)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2),
-      );
-      // ガラスのハイライト（背面でも少し光る）
-      canvas.drawRRect(
-        legRRect,
-        Paint()
-          ..shader = LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.white.withValues(alpha: 0.15),
-              Colors.white.withValues(alpha: 0.4),
-            ],
-          ).createShader(legRect),
-      );
-      // エッジのハイライトで輪郭を強調して視認性アップ
-      final highlightPath = Path()
-        ..moveTo(legRect.left + 3, legRect.top + 5)
-        ..lineTo(legRect.left + 3, legRect.bottom - 5);
-      canvas.drawPath(
-        highlightPath,
-        Paint()
-          ..color = Colors.white.withValues(alpha: 0.6)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2
-          ..strokeCap = StrokeCap.round,
-      );
-    }
-
-    // 後ろの左足と右足（奥まった位置に配置して4本足に）
-    drawBackLeg(Offset(center.dx - width * 0.1, center.dy + height * 0.35));
-    drawBackLeg(Offset(center.dx + width * 0.35, center.dy + height * 0.35));
-
-    // 背面のガラスの厚み（内側のシャドウとわずかなシアンで奥行きを表現）
-    final bodyRect = Rect.fromCenter(
-      center: center,
-      width: width,
-      height: height,
-    );
-    final backBodyPaint = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          Colors.white.withValues(alpha: 0.25), // Stronger frosted glass base
-          Colors.black.withValues(alpha: 0.05),
-          const Color(0xFFE0F7FA).withValues(alpha: 0.6), // Stronger rim light
-        ],
-        stops: const [0.0, 0.85, 1.0],
-      ).createShader(bodyRect);
-    canvas.drawOval(bodyRect, backBodyPaint);
-
-    // 投入口の奥側（暗いスリット線）
-    final slotCenter = Offset(
-      center.dx + width * 0.05,
-      center.dy - height * 0.48,
-    );
-    final slotWidth = width * 0.22;
-    final slotDarkPath = Path();
-    slotDarkPath.moveTo(slotCenter.dx - slotWidth * 0.5, slotCenter.dy);
-    slotDarkPath.quadraticBezierTo(
-      slotCenter.dx,
-      slotCenter.dy - height * 0.02,
-      slotCenter.dx + slotWidth * 0.5,
-      slotCenter.dy + height * 0.015,
-    );
-
-    canvas.drawPath(
-      slotDarkPath,
-      Paint()
-        ..color = Colors.black.withValues(alpha: 0.6)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 3
-        ..strokeCap = StrokeCap.round,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-/// 貯金箱の前面（お腹の手前のガラス、鼻、目、手前の耳、足、しっぽ）
-class GlassPiggyBankFrontPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width * 0.5, size.height * 0.5);
-    final width = size.width * 0.8;
-    final height = size.width * 0.65;
-    final bodyRect = Rect.fromCenter(
-      center: center,
-      width: width,
-      height: height,
-    );
-
-    // 1. お腹の前面ガラス（シャドウで球体の立体感を出す）
-    final bodyShadow = Paint()
-      ..shader = RadialGradient(
-        center: const Alignment(0.3, 0.3), // 左上から光、右下に影
-        radius: 0.8,
-        colors: [Colors.transparent, Colors.black.withValues(alpha: 0.15)],
-        stops: const [0.6, 1.0],
-      ).createShader(bodyRect);
-    canvas.drawOval(bodyRect, bodyShadow);
-
-    // フレネル反射（フチを白く飛ばす）
-    final frontBodyPaint = Paint()
-      ..shader = RadialGradient(
-        center: const Alignment(-0.2, -0.2),
-        radius: 0.9,
-        colors: [
-          Colors.white.withValues(alpha: 0.15),
-          Colors.white.withValues(alpha: 0.35),
-          Colors.white.withValues(alpha: 0.8),
-          Colors.white.withValues(alpha: 1.0),
-        ],
-        stops: const [0.5, 0.85, 0.95, 1.0],
-      ).createShader(bodyRect);
-    canvas.drawOval(bodyRect, frontBodyPaint);
-
-    // 底面の極厚ガラスハイライト
-    canvas.save();
-    canvas.clipPath(Path()..addOval(bodyRect));
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: center,
-        width: width * 0.96,
-        height: height * 0.96,
-      ),
-      Paint()
-        ..color = Colors.white.withValues(alpha: 0.8)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 14
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
-    );
-    canvas.restore();
-
-    // 2. スペキュラハイライト（シャープな窓の反射で硬いガラスを表現）
-    final windowHighlight = Path();
-    windowHighlight.moveTo(center.dx - width * 0.3, center.dy - height * 0.4);
-    windowHighlight.quadraticBezierTo(
-      center.dx,
-      center.dy - height * 0.48,
-      center.dx + width * 0.25,
-      center.dy - height * 0.3,
-    );
-    windowHighlight.lineTo(center.dx + width * 0.2, center.dy - height * 0.25);
-    windowHighlight.quadraticBezierTo(
-      center.dx,
-      center.dy - height * 0.4,
-      center.dx - width * 0.25,
-      center.dy - height * 0.33,
-    );
-    windowHighlight.close();
-
-    canvas.drawPath(
-      windowHighlight,
-      Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white.withValues(alpha: 0.5), // Stronger highlight
-            Colors.white.withValues(alpha: 0.1),
-          ],
-        ).createShader(windowHighlight.getBounds()),
-    );
-
-    // 3. 手前の足
-    void drawFrontLeg(Offset legCenter) {
-      final legRect = Rect.fromCenter(
-        center: legCenter,
-        width: width * 0.14,
-        height: height * 0.28,
-      );
-      final legRRect = RRect.fromRectAndRadius(
-        legRect,
-        const Radius.circular(15),
-      );
-
-      canvas.drawRRect(
-        legRRect,
-        Paint()..color = Colors.white.withValues(alpha: 0.15),
-      );
-      // 右側の影
-      canvas.drawRRect(
-        legRRect,
-        Paint()
-          ..shader = LinearGradient(
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-            colors: [Colors.transparent, Colors.black.withValues(alpha: 0.15)],
-          ).createShader(legRect),
-      );
-      // 左側のハイライト
-      final highlightPath = Path()
-        ..moveTo(legRect.left + 5, legRect.top + 8)
-        ..lineTo(legRect.left + 5, legRect.bottom - 8);
-      canvas.drawPath(
-        highlightPath,
-        Paint()
-          ..color = Colors.white.withValues(alpha: 0.9)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 3
-          ..strokeCap = StrokeCap.round
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1),
-      );
-    }
-
-    drawFrontLeg(Offset(center.dx - width * 0.25, center.dy + height * 0.45));
-    drawFrontLeg(Offset(center.dx + width * 0.2, center.dy + height * 0.45));
-
-    // 4. 鼻 (Snout) を少し小さく、透明感を持たせる
-    final snoutCenter = Offset(
-      center.dx - width * 0.4,
-      center.dy + height * 0.05,
-    );
-    final snoutWidth = width * 0.22;
-    final snoutHeight = height * 0.32;
-    final snoutRect = Rect.fromCenter(
-      center: snoutCenter,
-      width: snoutWidth,
-      height: snoutHeight,
-    );
-
-    // 白いプラスチック/ガラスの土台フチ（細くする）
-    canvas.drawOval(
-      snoutRect.inflate(2),
-      Paint()
-        ..color = Colors.white.withValues(alpha: 0.7)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 3
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1),
-    );
-
-    // 少し透明感のあるリアルなピンクの鼻
-    canvas.drawOval(
-      snoutRect,
-      Paint()
-        ..shader = RadialGradient(
-          center: const Alignment(-0.3, -0.3),
-          radius: 0.8,
-          colors: [
-            const Color(0xFFFCE4EC).withValues(alpha: 0.9), // ハイライトピンク
-            const Color(0xFFF8BBD0).withValues(alpha: 0.75), // ベースピンク
-            const Color(0xFFE91E63).withValues(alpha: 0.4), // シャドウ
-          ],
-          stops: const [0.0, 0.7, 1.0],
-        ).createShader(snoutRect),
-    );
-
-    // 鼻の穴
-    final leftNostril = Rect.fromCenter(
-      center: Offset(snoutCenter.dx - snoutWidth * 0.12, snoutCenter.dy),
-      width: snoutWidth * 0.12,
-      height: snoutHeight * 0.25,
-    );
-    final rightNostril = Rect.fromCenter(
-      center: Offset(snoutCenter.dx + snoutWidth * 0.12, snoutCenter.dy),
-      width: snoutWidth * 0.12,
-      height: snoutHeight * 0.25,
-    );
-    final nostrilPaint = Paint()
-      ..color = const Color(0xFFAD1457).withValues(alpha: 0.6);
-    canvas.drawOval(leftNostril, nostrilPaint);
-    canvas.drawOval(rightNostril, nostrilPaint);
-
-    // 5. 目 (Eyes)
-    void drawEye(Offset eyeCenter) {
-      final eyeRect = Rect.fromCenter(
-        center: eyeCenter,
-        width: width * 0.045,
-        height: height * 0.12,
-      );
-      // ツヤのある黒目
-      canvas.drawOval(eyeRect, Paint()..color = const Color(0xFF2C2C2C));
-      // 上の強いハイライト
-      canvas.drawCircle(
-        Offset(eyeCenter.dx - 2, eyeCenter.dy - 4),
-        2.5,
-        Paint()..color = Colors.white,
-      );
-      // 下の照り返し
-      canvas.drawCircle(
-        Offset(eyeCenter.dx + 1.5, eyeCenter.dy + 3),
-        1.2,
-        Paint()..color = Colors.white.withValues(alpha: 0.8),
-      );
-    }
-
-    drawEye(Offset(center.dx - width * 0.23, center.dy - height * 0.15));
-    drawEye(Offset(center.dx - width * 0.03, center.dy - height * 0.15));
-
-    // 6. 手前の耳（左耳）と奥の耳（右耳）をここで両方描画（体のエッジハイライトの上に重ねるため）
-    void drawEar(Path earPath, bool isFront) {
-      canvas.drawPath(
-        earPath,
-        Paint()
-          ..shader = LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Colors.white.withValues(alpha: isFront ? 0.6 : 0.4),
-              Colors.white.withValues(alpha: 0.1),
-            ],
-          ).createShader(earPath.getBounds()),
-      );
-      canvas.drawPath(
-        earPath,
-        Paint()
-          ..color = Colors.white.withValues(alpha: isFront ? 0.95 : 0.8)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 3
-          ..strokeJoin = StrokeJoin.round
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1),
-      );
-    }
-
-    // 奥の耳（右耳）
-    final backEarPath = Path();
-    backEarPath.moveTo(center.dx - width * 0.05, center.dy - height * 0.4);
-    backEarPath.quadraticBezierTo(
-      center.dx - width * 0.05,
-      center.dy - height * 0.55,
-      center.dx + width * 0.1,
-      center.dy - height * 0.6,
-    );
-    backEarPath.quadraticBezierTo(
-      center.dx + width * 0.2,
-      center.dy - height * 0.5,
-      center.dx + width * 0.15,
-      center.dy - height * 0.4,
-    );
-    backEarPath.close();
-    drawEar(backEarPath, false);
-
-    // 手前の耳（左耳）
-    final frontEarPath = Path();
-    frontEarPath.moveTo(center.dx - width * 0.35, center.dy - height * 0.3);
-    frontEarPath.quadraticBezierTo(
-      center.dx - width * 0.45,
-      center.dy - height * 0.5,
-      center.dx - width * 0.28,
-      center.dy - height * 0.55,
-    );
-    frontEarPath.quadraticBezierTo(
-      center.dx - width * 0.1,
-      center.dy - height * 0.45,
-      center.dx - width * 0.15,
-      center.dy - height * 0.35,
-    );
-    frontEarPath.close();
-    drawEar(frontEarPath, true);
-
-    // 7. 投入口の手前側のガラスエッジ（奥の暗い線と合わせてリアルなスリットにする）
-    final slotCenter = Offset(
-      center.dx + width * 0.05,
-      center.dy - height * 0.48,
-    );
-    final slotWidth = width * 0.22;
-    final rimPath = Path();
-    rimPath.moveTo(slotCenter.dx - slotWidth * 0.48, slotCenter.dy + 2);
-    rimPath.quadraticBezierTo(
-      slotCenter.dx,
-      slotCenter.dy - height * 0.02 + 2,
-      slotCenter.dx + slotWidth * 0.48,
-      slotCenter.dy + height * 0.015 + 2,
-    );
-
-    canvas.drawPath(
-      rimPath,
-      Paint()
-        ..color = Colors.white.withValues(alpha: 0.95)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 3
-        ..strokeCap = StrokeCap.round,
-    );
-
-    // 8. しっぽ (Tail)
-    final tailPath = Path();
-    tailPath.moveTo(center.dx + width * 0.48, center.dy + height * 0.1);
-    tailPath.quadraticBezierTo(
-      center.dx + width * 0.65,
-      center.dy + height * 0.05,
-      center.dx + width * 0.6,
-      center.dy - height * 0.05,
-    );
-    tailPath.quadraticBezierTo(
-      center.dx + width * 0.5,
-      center.dy - height * 0.1,
-      center.dx + width * 0.55,
-      center.dy + height * 0.05,
-    );
-
-    // しっぽの影（立体感）
-    canvas.drawPath(
-      tailPath,
-      Paint()
-        ..color = Colors.black.withValues(alpha: 0.15)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 6
-        ..strokeCap = StrokeCap.round
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2),
-    );
-    // しっぽのガラス芯
-    canvas.drawPath(
-      tailPath,
-      Paint()
-        ..color = Colors.white.withValues(alpha: 0.9)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 3
-        ..strokeCap = StrokeCap.round,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
+// Removed unused GlassPiggyBankBackPainter and GlassPiggyBankFrontPainter
 
 // ---------------------------------------------------------
 // 3D Metallic Coin (With physical thickness and glossy face)
@@ -1822,11 +1131,7 @@ class _Coin3DPainter extends CustomPainter {
     canvas.drawCircle(center, radius, paint);
 
     // Soft rim (Inner glow and outer shadow)
-    final rimPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.3)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-    canvas.drawCircle(center, radius - 2, rimPaint);
+    // 白い枠は削除しました
 
     final innerShadow = Paint()
       ..color = Colors.black.withValues(alpha: 0.08)
