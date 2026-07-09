@@ -106,7 +106,7 @@ class _RootScreenState extends State<RootScreen> {
   Widget build(BuildContext context) {
     final pages = [
       HomeScreen(savedNote: _savedText, currentCoins: _currentCoins),
-      InputScreen(initialText: _savedText, onSave: _saveText, onBack: _goBack),
+      InputScreen(initialText: '', onSave: _saveText, onBack: _goBack),
       const AnalyticsScreen(),
     ];
 

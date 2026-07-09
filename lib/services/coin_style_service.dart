@@ -2,25 +2,27 @@ import 'package:flutter/material.dart';
 
 class CoinStyleService {
   static const Map<String, IconData> iconMap = {
-    'heart_pink': Icons.favorite,
-    'star_blue': Icons.star,
-    'star_yellow': Icons.star,
-    'leaf_green': Icons.eco,
-    'star_purple': Icons.star,
-    'flower_orange': Icons.local_florist,
-    'flower_pink': Icons.local_florist,
-    'note_blue': Icons.music_note,
+    'sunny_blue': Icons.wb_sunny_rounded,
+    'heart_pink': Icons.favorite_rounded,
+    'home_orange': Icons.home_rounded,
+    'star_yellow': Icons.star_rounded,
+    'food_green': Icons.restaurant_rounded,
+    'music_purple': Icons.music_note_rounded,
+    'run_teal': Icons.directions_run_rounded,
+    'car_indigo': Icons.directions_car_rounded,
+    'bulb_red': Icons.lightbulb_rounded,
   };
 
   static const Map<String, Color> colorMap = {
+    'sunny_blue': Color(0xFF64B5F6),
     'heart_pink': Color(0xFFF06292),
-    'star_blue': Color(0xFF64B5F6),
-    'star_yellow': Color(0xFFFFEB3B),
-    'leaf_green': Color(0xFF81C784),
-    'star_purple': Color(0xFFBA68C8),
-    'flower_orange': Color(0xFFFF8A65),
-    'flower_pink': Color(0xFFF48FB1),
-    'note_blue': Color(0xFF4FC3F7),
+    'home_orange': Color(0xFFFFB74D),
+    'star_yellow': Color(0xFFFFD54F),
+    'food_green': Color(0xFF81C784),
+    'music_purple': Color(0xFFBA68C8),
+    'run_teal': Color(0xFF4DB6AC),
+    'car_indigo': Color(0xFF7986CB),
+    'bulb_red': Color(0xFFE57373),
   };
 
   static Color resolveColor(dynamic colorValue) {
@@ -39,7 +41,22 @@ class CoinStyleService {
   }
 
   static Map<String, dynamic> buildCoinAppearance({String? coinType}) {
-    final normalized = (coinType ?? '').trim().toLowerCase();
+    String normalized = (coinType ?? '').trim().toLowerCase();
+    
+    // Map legacy coin_types to new IDs
+    const legacyMap = {
+      'star_blue': 'sunny_blue',
+      'leaf_green': 'run_teal',
+      'star_purple': 'music_purple',
+      'flower_orange': 'home_orange',
+      'flower_pink': 'heart_pink',
+      'note_blue': 'sunny_blue',
+    };
+    
+    if (legacyMap.containsKey(normalized)) {
+      normalized = legacyMap[normalized]!;
+    }
+    
     return {
       'icon': iconMap[normalized] ?? Icons.monetization_on,
       'color': resolveColor(colorMap[normalized] ?? const Color(0xFF64B5F6)),

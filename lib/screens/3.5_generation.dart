@@ -6,11 +6,13 @@ import '../services/coin_style_service.dart';
 class PiggyBankTransitionScreen extends StatefulWidget {
   final Map<String, dynamic> coinCategory;
   final int currentCoins;
+  final List<Map<String, dynamic>> coinRecords;
 
   const PiggyBankTransitionScreen({
     super.key,
     required this.coinCategory,
     required this.currentCoins,
+    this.coinRecords = const [],
   });
 
   @override
@@ -119,6 +121,7 @@ class _PiggyBankTransitionScreenState extends State<PiggyBankTransitionScreen>
                   child: PiggyBankCard(
                     theme: theme, // Sync background with home screen
                     currentCoins: widget.currentCoins,
+                    coinRecords: widget.coinRecords,
                     showCollectionButton: false, // 落下演出中はボタンを隠す
                     fallingCoin: Positioned(
                       // Calculate slot X position based on GlassPiggyBank dimensions
