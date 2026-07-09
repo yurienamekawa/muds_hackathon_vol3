@@ -94,7 +94,6 @@ class PiggyBankTransitionScreen extends StatefulWidget {
                     animation: _controller,
                     builder: (context, child) {
                       return IgnorePointer(
-<<<<<<< HEAD
                         child: PiggyBankCard(
                           theme: theme,
                           currentCoins: widget.currentCoins,
@@ -121,13 +120,13 @@ class PiggyBankTransitionScreen extends StatefulWidget {
                                     angleX: 0.2,
                                     angleY: 0,
                                     angleZ: 0,
-=======
                         child: Center(
                           child: Padding(
                             padding: const EdgeInsets.only(top: 20),
                             child: GlassPiggyBank(
                               currentCoins: widget.currentCoins,
                               theme: theme, // Pass theme to color tint the pig
+                              coinRecords: widget.coinRecords,
                               fallingCoin: Positioned(
                                 left: 164,
                                 top: _fallAnimation.value,
@@ -142,6 +141,7 @@ class PiggyBankTransitionScreen extends StatefulWidget {
                                         ..rotateY(
                                           _controller.value * math.pi * 8,
                                         ),
+                                        ..rotateY(_controller.value * math.pi * 8),
                                       child: Coin3D(
                                         category: {
                                           'icon': appearance['icon'],
@@ -153,7 +153,7 @@ class PiggyBankTransitionScreen extends StatefulWidget {
                                         angleZ: 0,
                                       ),
                                     ),
->>>>>>> fde2be0 (豚さん頑張ったもんね！)
+
                                   ),
                                 ),
                               ),
@@ -171,4 +171,4 @@ class PiggyBankTransitionScreen extends StatefulWidget {
       ),
     );
   }
- 
+}
