@@ -3,11 +3,12 @@ import 'dart:math' as math;
 import '5_collection.dart';
 import '3.5_generation.dart';
 import '../services/db_service.dart';
+import '../services/ai_service.dart';
 import '../services/coin_style_service.dart';
 
 class GenerationScreen extends StatefulWidget {
-  final Map<String, dynamic>? aiResult;
-  const GenerationScreen({super.key, this.aiResult});
+  final String? memo;
+  const GenerationScreen({super.key, this.memo});
 
   @override
   State<GenerationScreen> createState() => _GenerationScreenState();
@@ -23,30 +24,44 @@ class _GenerationScreenState extends State<GenerationScreen>
   late final Animation<double> _rotationAnimation;
   late final Animation<double> _coinOpacityAnimation;
 
-  late final Map<String, dynamic> dummyCategory;
+  Map<String, dynamic>? _category;
   int _todayCoins = 1;
+  bool _isProcessing = true;
 
   Color _resolveColor(dynamic colorValue) {
     return CoinStyleService.resolveColor(colorValue);
   }
 
   Map<String, dynamic> _buildCategory(Map<String, dynamic>? aiResult) {
-    final category = (aiResult?['category'] as String?)?.trim();
+    final category = (aiResult?['category'] as String?)?.trim() ?? '日常・景色';
     final title = (aiResult?['short_title'] as String?)?.trim();
     final detail = (aiResult?['ai_comment'] as String?)?.trim();
-    final coinType = ((aiResult?['coin_type'] as String?)?.trim() ?? '')
-        .toLowerCase();
-    final normalizedCoinType = coinType.isEmpty ? 'heart_pink' : coinType;
+    String coinType = ((aiResult?['coin_type'] as String?)?.trim() ?? '').toLowerCase();
+
+    const categoryToCoinType = {
+      '日常・景色': 'sunny_blue',
+      '友達・対人': 'heart_pink',
+      '家族': 'home_orange',
+      '仕事・学校': 'star_yellow',
+      '食事': 'food_green',
+      '趣味・推し': 'music_purple',
+      '運動・健康': 'run_teal',
+      'お出かけ': 'car_indigo',
+      '自己成長': 'bulb_red',
+    };
+
+    // If the AI didn't provide a valid coin_type, infer it from the category
+    if (!categoryToCoinType.values.contains(coinType)) {
+      coinType = categoryToCoinType[category] ?? 'sunny_blue';
+    }
 
     final appearance = CoinStyleService.buildCoinAppearance(
-      coinType: normalizedCoinType,
+      coinType: coinType,
     );
 
     return {
-      'title': title?.isNotEmpty == true
-          ? title
-          : (category?.isNotEmpty == true ? category : '日常・景色'),
-      'subtitle': category?.isNotEmpty == true ? category : '日常・景色',
+      'title': title?.isNotEmpty == true ? title : category,
+      'subtitle': category,
       'icon': appearance['icon'],
       'color': _resolveColor(appearance['color']),
       'date': DateTime.now().toString().split(' ').first,
@@ -56,15 +71,16 @@ class _GenerationScreenState extends State<GenerationScreen>
     };
   }
 
+  List<Map<String, dynamic>> _coinRecords = [];
+
   @override
   void initState() {
     super.initState();
-    dummyCategory = _buildCategory(widget.aiResult);
 
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2200),
-    )..forward();
+    );
 
     _loopController = AnimationController(
       vsync: this,
@@ -101,24 +117,67 @@ class _GenerationScreenState extends State<GenerationScreen>
           ),
         );
 
-    // Fetch today's coin count from Supabase
+    // Fetch today's coin count and recent coin records
     DbService.getTodayCoinCount().then((count) {
-      if (mounted) {
-        setState(() {
-          _todayCoins = count;
-        });
-      }
+      if (mounted) setState(() => _todayCoins = count);
+    });
+    DbService.getRecentCoinRecords().then((records) {
+      if (mounted) setState(() => _coinRecords = records);
     });
 
-    // 演出完了後、少し待ってから自動的にトランジション画面へ遷移
-    Future.delayed(const Duration(milliseconds: 3500), () {
+    _processMemo();
+  }
+
+  Future<void> _processMemo() async {
+    final memo = widget.memo;
+    if (memo == null || memo.isEmpty) {
+      // Fallback if no memo provided
+      if (mounted) {
+        setState(() {
+          _category = _buildCategory(null);
+          _isProcessing = false;
+        });
+        _controller.forward();
+        _scheduleTransition();
+      }
+      return;
+    }
+
+    try {
+      final aiData = await AiService.analyzeHappyMemo(memo);
+      await DbService.insertCoinData(memo, aiData);
+
+      if (mounted) {
+        setState(() {
+          _category = _buildCategory(aiData);
+          _isProcessing = false;
+        });
+        _controller.forward();
+        _scheduleTransition();
+      }
+    } catch (e) {
+      // Error handling: proceed with fallback coin
+      if (mounted) {
+        setState(() {
+          _category = _buildCategory(null);
+          _isProcessing = false;
+        });
+        _controller.forward();
+        _scheduleTransition();
+      }
+    }
+  }
+
+  void _scheduleTransition() {
+    Future.delayed(const Duration(milliseconds: 5000), () {
       if (mounted) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (context) => PiggyBankTransitionScreen(
-              coinCategory: dummyCategory,
+              coinCategory: _category!,
               currentCoins: _todayCoins,
+              coinRecords: _coinRecords,
             ),
           ),
         );
@@ -144,8 +203,8 @@ class _GenerationScreenState extends State<GenerationScreen>
             child: MagicalBackgroundEffect(
               introController: _controller,
               loopController: _loopController,
-              baseColor: dummyCategory['color'] is Color
-                  ? dummyCategory['color'] as Color
+              baseColor: _category?['color'] is Color
+                  ? _category!['color'] as Color
                   : const Color(0xFF64B5F6),
             ),
           ),
@@ -161,19 +220,21 @@ class _GenerationScreenState extends State<GenerationScreen>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text(
-                        '分析中...',
-                        style: TextStyle(
+                      Text(
+                        _isProcessing ? '分析中...' : '生成完了！',
+                        style: const TextStyle(
                           fontSize: 26,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF3B3B3B),
                         ),
                       ),
                       const SizedBox(height: 14),
-                      const Text(
-                        'AIがあなたのポジティブを\nコインに変換中です ✨',
+                      Text(
+                        _isProcessing
+                            ? 'あなたのポジティブを\nAIが分析しています ✨'
+                            : 'ポジティブな出来事が\n素敵なコインになりました！',
                         textAlign: TextAlign.center,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 16,
                           color: Color(0xFF5A5A5A),
                           height: 1.6,
@@ -185,64 +246,93 @@ class _GenerationScreenState extends State<GenerationScreen>
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
-                            // The Coin (Animated)
-                            AnimatedBuilder(
-                              animation: _controller,
-                              builder: (context, child) {
-                                return Transform.translate(
-                                  offset: Offset(0, _slideAnimation.value),
-                                  child: Opacity(
-                                    opacity: _coinOpacityAnimation.value,
-                                    child: Transform(
-                                      alignment: Alignment.center,
-                                      transform: Matrix4.identity()
-                                        ..setEntry(3, 2, 0.001) // perspective
-                                        ..rotateY(
-                                          _rotationAnimation.value,
-                                        ) // 3D spin
-                                        ..scale(
-                                          _scaleAnimation.value,
-                                        ), // scale up
-                                      child: child,
+                            if (_isProcessing)
+                              RotationTransition(
+                                turns: _loopController,
+                                child: Container(
+                                  width: 120,
+                                  height: 120,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.5),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 4,
                                     ),
                                   ),
-                                );
-                              },
-                              child: CoinWidget(
-                                category: dummyCategory,
-                                isAcquired: true,
-                                size: 180,
+                                  child: const Icon(
+                                    Icons.auto_awesome,
+                                    size: 50,
+                                    color: Colors.grey,
+                                  ),
+                                ),
                               ),
-                            ),
+
+                            if (!_isProcessing && _category != null)
+                              // The Coin (Animated)
+                              AnimatedBuilder(
+                                animation: _controller,
+                                builder: (context, child) {
+                                  return Transform.translate(
+                                    offset: Offset(0, _slideAnimation.value),
+                                    child: Opacity(
+                                      opacity: _coinOpacityAnimation.value,
+                                      child: Transform(
+                                        alignment: Alignment.center,
+                                        transform: Matrix4.identity()
+                                          ..setEntry(3, 2, 0.001) // perspective
+                                          ..rotateY(
+                                            _rotationAnimation.value,
+                                          ) // 3D spin
+                                          ..scale(
+                                            _scaleAnimation.value,
+                                          ), // scale up
+                                        child: child,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child: CoinWidget(
+                                  category: _category!,
+                                  isAcquired: true,
+                                  size: 180,
+                                ),
+                              ),
                           ],
                         ),
                       ),
                       const SizedBox(height: 10),
-                      FadeTransition(
-                        opacity: _opacityAnimation,
-                        child: Column(
-                          children: [
-                            const Text(
-                              '素敵なコインが生まれました！',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF4A4A4A),
+                      if (!_isProcessing && _category != null)
+                        FadeTransition(
+                          opacity: _opacityAnimation,
+                          child: Column(
+                            children: [
+                              Text(
+                                _category!['title'],
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF4A4A4A),
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 8),
-                            const Text(
-                              'ポジティブな気持ちがコインになって貯まります。',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Color(0xFF7A7A7A),
-                                height: 1.6,
+                              const SizedBox(height: 8),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16.0,
+                                ),
+                                child: Text(
+                                  _category!['detail'],
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Color(0xFF7A7A7A),
+                                    height: 1.6,
+                                  ),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
                       const SizedBox(height: 20),
                     ],
                   ),

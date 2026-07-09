@@ -49,40 +49,18 @@ class _InputScreenState extends State<InputScreen> {
   Future<void> _save() async {
     if (_controller.text.isEmpty) return;
 
-    setState(() => _isLoading = true);
-
-    try {
-      // 🌟 ここを修正：currentUser?.id ではなく currentSession?.user.id を使うか、
-      // より確実に auth.currentUser を参照する方法に変えます
-      final user = Supabase.instance.client.auth.currentUser;
-
-      if (user == null) throw Exception('ログインしていません');
-
-      // 2. AI分析
-      final aiData = await AiService.analyzeHappyMemo(_controller.text);
-      
-      // 3. DB保存
-      await DbService.insertCoinData(
-        _controller.text, 
-        aiData, 
+    final memoText = _controller.text;
+    
+    // UIの入力をリセット
+    widget.onSave(memoText);
+    
+    // 即座に生成画面へ遷移し、裏で処理を行う
+    if (mounted) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => GenerationScreen(memo: memoText),
+        ),
       );
-
-      widget.onSave(_controller.text);
-      if (mounted) {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => GenerationScreen(aiResult: aiData),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('保存に失敗しました: $e')),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
     }
   }
 

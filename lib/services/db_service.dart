@@ -45,4 +45,19 @@ class DbService {
     }
     return count;
   }
+
+  static Future<List<Map<String, dynamic>>> getRecentCoinRecords() async {
+    final client = Supabase.instance.client;
+    final user = client.auth.currentUser;
+    if (user == null) return [];
+
+    final data = await client
+        .from('happy_coins')
+        .select('id, coin_type, created_at')
+        .eq('user_id', user.id)
+        .order('created_at', ascending: false)
+        .limit(30);
+
+    return (data as List<dynamic>?)?.cast<Map<String, dynamic>>().toList() ?? [];
+  }
 }
