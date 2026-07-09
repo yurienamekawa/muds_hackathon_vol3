@@ -29,11 +29,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   void initState() {
     super.initState();
     _averageScores = {
-      'score_tsunagari': 3.0,
-      'score_wakuwaku': 3.0,
-      'score_kansha': 3.0,
-      'score_tassei': 3.0,
-      'score_iyashi': 3.0,
+      'score_tsunagari': 0.0,
+      'score_wakuwaku': 0.0,
+      'score_kansha': 0.0,
+      'score_tassei': 0.0,
+      'score_iyashi': 0.0,
     };
     _dailyCounts = {};
     _topCategory = '日常・景色';
@@ -141,7 +141,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     }
     return sums.map((key, sum) {
       final count = counts[key]!;
-      return MapEntry(key, count > 0 ? sum / count : 3.0);
+      return MapEntry(key, count > 0 ? sum / count : 0.0);
     });
   }
 
@@ -173,18 +173,20 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       '運動・健康': '体を動かしたときに気分がすっきりしやすいようです。短い散歩や軽い体操を習慣にして、もう少し自分の体と向き合ってみましょう。',
       'お出かけ': '新しい風景や外出で心がリフレッシュしています。近場のお出かけでもいいので、気になる場所に行ってみるといいでしょう。',
       '自己成長': '挑戦や学びを通じて幸せを感じる傾向があります。今日の経験を振り返り、次にやってみたいことを小さく決めてみてください。',
-      '日常・景色': '毎日のちいさな景色や日常に幸せを見つけています。今日は見慣れた風景の中で、いつもと違う「いいな」と感じる瞬間を探してみましょう。',
+      '日常・景色':
+          '毎日のちいさな景色や日常に幸せを見つけています。今日は見慣れた風景の中で、いつもと違う「いいな」と感じる瞬間を探してみましょう。',
     };
 
     // 🌟 定型文を消して message だけを返すように変更
-    final message = advice[topCategory] ??
+    final message =
+        advice[topCategory] ??
         'これまでの記録から、あなたが感じる幸せのヒントが見えてきました。日々の中で心地よいことを大切にしてみましょう。';
     return message;
   }
 
   String _buildRadarSummary() {
-    if (_averageScores.isEmpty) {
-      return 'まだ分析できる記録がありません。';
+    if (_averageScores.values.every((v) => v == 0.0)) {
+      return '📈日々の記録から、あなたがどのような瞬間に幸せを感じやすいかを5つの指標で可視化します📈';
     }
     final sorted = _averageScores.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
@@ -316,9 +318,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             Text(
               _buildRadarSummary(),
               style: const TextStyle(
-                fontSize: 13,
+                fontSize: 14,
                 color: Color(0xFF4A4A4A),
-                height: 1.4,
+                height: 1.5,
               ),
             ),
           ],
@@ -353,7 +355,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             Text(
               _adviceMessage,
               style: const TextStyle(
-                fontSize: 15,
+                fontSize: 14,
                 color: Color(0xFF4A4A4A),
                 height: 1.5,
               ),
@@ -416,7 +418,9 @@ class _ContributionGridState extends State<ContributionGrid> {
   @override
   Widget build(BuildContext context) {
     final dailyCounts = widget.dailyCounts;
-    final maxCount = dailyCounts.values.isEmpty ? 0 : dailyCounts.values.reduce(math.max);
+    final maxCount = dailyCounts.values.isEmpty
+        ? 0
+        : dailyCounts.values.reduce(math.max);
     final sortedDays = dailyCounts.keys.toList()..sort();
     if (sortedDays.isEmpty) {
       return const SizedBox.shrink();
@@ -499,12 +503,17 @@ class _ContributionCell extends StatelessWidget {
       color = const Color(0xFFECECEC); // 未記録
     } else {
       final ratio = maxCount == 0 ? 0.0 : count / maxCount;
-      
-      if (ratio <= 0.2) color = const Color(0xFFD1E7C5);
-      else if (ratio <= 0.4) color = const Color(0xFFB6D7A8);
-      else if (ratio <= 0.6) color = const Color(0xFF93C47D);
-      else if (ratio <= 0.8) color = const Color(0xFF6B8E23);
-      else color = const Color(0xFF4A6B1A);
+
+      if (ratio <= 0.2)
+        color = const Color(0xFFD1E7C5);
+      else if (ratio <= 0.4)
+        color = const Color(0xFFB6D7A8);
+      else if (ratio <= 0.6)
+        color = const Color(0xFF93C47D);
+      else if (ratio <= 0.8)
+        color = const Color(0xFF6B8E23);
+      else
+        color = const Color(0xFF4A6B1A);
     }
 
     return AspectRatio(
@@ -547,8 +556,6 @@ class _ContributionLegendDot extends StatelessWidget {
   }
 }
 
-
-
 class RadarChart extends StatelessWidget {
   final Map<String, double> values;
   final Map<String, String> labels;
@@ -573,7 +580,10 @@ class _RadarChartPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = math.max(0.0, math.min(size.width / 2 - 58, size.height / 2 - 15));
+    final radius = math.max(
+      0.0,
+      math.min(size.width / 2 - 58, size.height / 2 - 15),
+    );
     final pointCount = values.length;
     final angleStep = 2 * math.pi / pointCount;
 
