@@ -71,6 +71,7 @@ flutter:
   assets:
     - .env
     - assets/piggy_bank.png
+    - assets/pig_pig2.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/go/assets-resolution
