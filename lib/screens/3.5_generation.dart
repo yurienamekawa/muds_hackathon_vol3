@@ -92,69 +92,87 @@ class _PiggyBankTransitionScreenState extends State<PiggyBankTransitionScreen>
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFDF7EE),
-      body: SafeArea(
-        child: Column(
-          children: [
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-              child: Row(
-                children: [
-                  Text(
-                    '幸せを貯金しています........',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF3B3B3B),
-                    ),
-                  ),
-                ],
-              ),
+      extendBodyBehindAppBar: true,
+      backgroundColor: Colors.transparent,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Full Screen Background
+          Positioned.fill(
+            child: CustomPaint(
+              painter: PiggyBankBackgroundPainter(theme: theme),
             ),
-            const SizedBox(height: 40),
-            AnimatedBuilder(
-              animation: _controller,
-              builder: (context, child) {
-                return IgnorePointer(
-                  child: PiggyBankCard(
-                    theme: theme, // Sync background with home screen
-                    currentCoins: widget.currentCoins,
-                    showCollectionButton: false, // 落下演出中はボタンを隠す
-                    fallingCoin: Positioned(
-                      // Calculate slot X position based on GlassPiggyBank dimensions
-                      left: 164,
-                      top: _fallAnimation.value,
-                      child: Transform.scale(
-                        scale: _scaleAnimation.value,
-                        child: Opacity(
-                          opacity: _opacityAnimation.value,
-                          child: Transform(
-                            alignment: Alignment.center,
-                            transform: Matrix4.identity()
-                              ..setEntry(3, 2, 0.001)
-                              ..rotateY(
-                                _controller.value * math.pi * 8,
-                              ), // Spin rapidly while falling
-                            child: Coin3D(
-                              category: {
-                                'icon': appearance['icon'],
-                                'color': appearance['color'],
-                              },
-                              size: 50,
-                              angleX: 0.2,
-                              angleY: 0, // Handled by Matrix4 above
-                              angleZ: 0,
+          ),
+          
+          // Foreground
+          SafeArea(
+            child: Column(
+              children: [
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        '幸せを貯金しています........',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF3B3B3B),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: AnimatedBuilder(
+                    animation: _controller,
+                    builder: (context, child) {
+                      return IgnorePointer(
+                        child: Center(
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 20),
+                            child: GlassPiggyBank(
+                              currentCoins: widget.currentCoins,
+                              fallingCoin: Positioned(
+                                left: 164,
+                                top: _fallAnimation.value,
+                                child: Transform.scale(
+                                  scale: _scaleAnimation.value,
+                                  child: Opacity(
+                                    opacity: _opacityAnimation.value,
+                                    child: Transform(
+                                      alignment: Alignment.center,
+                                      transform: Matrix4.identity()
+                                        ..setEntry(3, 2, 0.001)
+                                        ..rotateY(
+                                          _controller.value * math.pi * 8,
+                                        ),
+                                      child: Coin3D(
+                                        category: {
+                                          'icon': appearance['icon'],
+                                          'color': appearance['color'],
+                                        },
+                                        size: 50,
+                                        angleX: 0.2,
+                                        angleY: 0,
+                                        angleZ: 0,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ),
+                      );
+                    },
                   ),
-                );
-              },
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
