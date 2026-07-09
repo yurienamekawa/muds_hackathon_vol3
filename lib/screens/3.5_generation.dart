@@ -80,85 +80,95 @@ class _PiggyBankTransitionScreenState extends State<PiggyBankTransitionScreen>
       coinType: widget.coinCategory['coin_type'] as String?,
     );
 
-    // Determine TimeOfDayTheme based on current hour
+    // テーマ計算はそのまま
     final hour = DateTime.now().hour;
     TimeOfDayTheme theme;
-    if (hour >= 5 && hour < 10) {
-      theme = TimeOfDayTheme.morning;
-    } else if (hour >= 10 && hour < 16) {
-      theme = TimeOfDayTheme.day;
-    } else if (hour >= 16 && hour < 19) {
-      theme = TimeOfDayTheme.evening;
-    } else {
-      theme = TimeOfDayTheme.night;
-    }
+    if (hour >= 5 && hour < 10) theme = TimeOfDayTheme.morning;
+    else if (hour >= 10 && hour < 16) theme = TimeOfDayTheme.day;
+    else if (hour >= 16 && hour < 19) theme = TimeOfDayTheme.evening;
+    else theme = TimeOfDayTheme.night;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFDF7EE),
-      body: SafeArea(
-        child: Column(
-          children: [
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-              child: Row(
-                children: [
-                  Text(
-                    '幸せを貯金しています........',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF3B3B3B),
-                    ),
-                  ),
-                ],
-              ),
+      extendBodyBehindAppBar: true,
+      backgroundColor: Colors.transparent,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          // 1. 背景
+          Positioned.fill(
+            child: CustomPaint(
+              painter: PiggyBankBackgroundPainter(theme: theme),
             ),
-            const SizedBox(height: 40),
-            AnimatedBuilder(
-              animation: _controller,
-              builder: (context, child) {
-                return IgnorePointer(
-                  child: PiggyBankCard(
-                    theme: theme, // Sync background with home screen
-                    currentCoins: widget.currentCoins,
-                    coinRecords: widget.coinRecords,
-                    showCollectionButton: false, // 落下演出中はボタンを隠す
-                    fallingCoin: Positioned(
-                      // Calculate slot X position based on GlassPiggyBank dimensions
-                      left: 164,
-                      top: _fallAnimation.value,
-                      child: Transform.scale(
-                        scale: _scaleAnimation.value,
-                        child: Opacity(
-                          opacity: _opacityAnimation.value,
-                          child: Transform(
-                            alignment: Alignment.center,
-                            transform: Matrix4.identity()
-                              ..setEntry(3, 2, 0.001)
-                              ..rotateY(
-                                _controller.value * math.pi * 8,
-                              ), // Spin rapidly while falling
-                            child: Coin3D(
-                              category: {
-                                'icon': appearance['icon'],
-                                'color': appearance['color'],
-                              },
-                              size: 50,
-                              angleX: 0.2,
-                              angleY: 0, // Handled by Matrix4 above
-                              angleZ: 0,
+          ),
+          
+          // 2. 前面コンテンツ
+          SafeArea(
+            child: Column(
+              children: [
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        '幸せを貯金しています.........',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF3B3B3B),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 40),
+                // ここでアニメーションを適用
+                Expanded(
+                  child: AnimatedBuilder(
+                    animation: _controller,
+                    builder: (context, child) {
+                      return IgnorePointer(
+                        child: PiggyBankCard(
+                          theme: theme,
+                          currentCoins: widget.currentCoins,
+                          coinRecords: widget.coinRecords,
+                          showCollectionButton: false,
+                          fallingCoin: Positioned(
+                            left: 164,
+                            top: _fallAnimation.value,
+                            child: Transform.scale(
+                              scale: _scaleAnimation.value,
+                              child: Opacity(
+                                opacity: _opacityAnimation.value,
+                                child: Transform(
+                                  alignment: Alignment.center,
+                                  transform: Matrix4.identity()
+                                    ..setEntry(3, 2, 0.001)
+                                    ..rotateY(_controller.value * math.pi * 8),
+                                  child: Coin3D(
+                                    category: {
+                                      'icon': appearance['icon'],
+                                      'color': appearance['color'],
+                                    },
+                                    size: 50,
+                                    angleX: 0.2,
+                                    angleY: 0,
+                                    angleZ: 0,
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ),
+                      );
+                    },
                   ),
-                );
-              },
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
-}
+ 
