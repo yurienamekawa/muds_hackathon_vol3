@@ -128,32 +128,35 @@ class _PiggyBankTransitionScreenState extends State<PiggyBankTransitionScreen>
                     animation: _controller,
                     builder: (context, child) {
                       return IgnorePointer(
-                        child: PiggyBankCard(
-                          theme: theme,
-                          currentCoins: widget.currentCoins,
-                          coinRecords: widget.coinRecords,
-                          showCollectionButton: false,
-                          fallingCoin: Positioned(
-                            left: 164,
-                            top: _fallAnimation.value,
-                            child: Transform.scale(
-                              scale: _scaleAnimation.value,
-                              child: Opacity(
-                                opacity: _opacityAnimation.value,
-                                child: Transform(
-                                  alignment: Alignment.center,
-                                  transform: Matrix4.identity()
-                                    ..setEntry(3, 2, 0.001)
-                                    ..rotateY(_controller.value * math.pi * 8),
-                                  child: Coin3D(
-                                    category: {
-                                      'icon': appearance['icon'],
-                                      'color': appearance['color'],
-                                    },
-                                    size: 50,
-                                    angleX: 0.2,
-                                    angleY: 0,
-                                    angleZ: 0,
+                        child: Center(
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 20),
+                            child: GlassPiggyBank(
+                              currentCoins: widget.currentCoins,
+                              coinRecords: widget.coinRecords,
+                              fallingCoin: Positioned(
+                                left: 164,
+                                top: _fallAnimation.value,
+                                child: Transform.scale(
+                                  scale: _scaleAnimation.value,
+                                  child: Opacity(
+                                    opacity: _opacityAnimation.value,
+                                    child: Transform(
+                                      alignment: Alignment.center,
+                                      transform: Matrix4.identity()
+                                        ..setEntry(3, 2, 0.001)
+                                        ..rotateY(_controller.value * math.pi * 8),
+                                      child: Coin3D(
+                                        category: {
+                                          'icon': appearance['icon'],
+                                          'color': appearance['color'],
+                                        },
+                                        size: 50,
+                                        angleX: 0.2,
+                                        angleY: 0,
+                                        angleZ: 0,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
@@ -171,4 +174,4 @@ class _PiggyBankTransitionScreenState extends State<PiggyBankTransitionScreen>
       ),
     );
   }
- 
+}
