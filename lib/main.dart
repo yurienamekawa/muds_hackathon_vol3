@@ -8,8 +8,6 @@ import 'screens/0_login.dart';
 import 'screens/1_home.dart';
 import 'screens/2_input.dart';
 import 'screens/4_analytics.dart';
-import 'services/ai_service.dart';
-import 'services/db_service.dart';
 
 
 

@@ -55,9 +55,8 @@ class _InputScreenState extends State<InputScreen> {
       // 🌟 ここを修正：currentUser?.id ではなく currentSession?.user.id を使うか、
       // より確実に auth.currentUser を参照する方法に変えます
       final user = Supabase.instance.client.auth.currentUser;
-      
+
       if (user == null) throw Exception('ログインしていません');
-      final userId = user.id; // これでエラーは消えるはずです！
 
       // 2. AI分析
       final aiData = await AiService.analyzeHappyMemo(_controller.text);
@@ -89,11 +88,16 @@ class _InputScreenState extends State<InputScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isCompact = screenWidth < 360;
+    final horizontalPadding = isCompact ? 16.0 : 24.0;
+    final titleFontSize = isCompact ? 16.0 : 18.0;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFFDF9F1), // Warmer cream background
+      backgroundColor: const Color(0xFFFDF9F1),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+          padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: isCompact ? 16 : 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -105,14 +109,20 @@ class _InputScreenState extends State<InputScreen> {
                     child: const Icon(Icons.arrow_back, color: Color(0xFF5A5A5A), size: 24),
                   ),
                   const SizedBox(width: 12),
-                  const Text(
-                    '今日のちょっとポジティブなことは？',
-                    style: TextStyle(
-                      fontFamily: 'serif',
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF4A4A4A),
-                      letterSpacing: 1.1,
+                
+
+                  Expanded(
+                    child: Text(
+                      'ちょっとポジティブなことは？',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: 'serif',
+                        fontSize: titleFontSize,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF4A4A4A),
+                        letterSpacing: 1.1,
+                      ),
                     ),
                   ),
                 ],
@@ -147,21 +157,25 @@ class _InputScreenState extends State<InputScreen> {
                             TextField(
                               controller: _controller,
                               maxLines: null,
+                              expands: true, // 🌟 これを追加！これで枠全体がタップ可能になります
+                              textAlignVertical: TextAlignVertical.top, // 🌟 入力開始位置を左上に固定
                               maxLength: _maxLength,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                color: Color(0xFF4A4A4A),
+                              style: TextStyle(
+                                fontSize: isCompact ? 15 : 16,
+                                color: const Color(0xFF4A4A4A),
                                 height: 1.6,
                               ),
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 border: InputBorder.none,
                                 hintText: 'ここに入力してみよう...',
-                                counterText: '', // Hide default counter
+                                counterText: '',
                                 hintStyle: TextStyle(
-                                  color: Color(0xFFBCAAA4),
-                                  fontSize: 16,
+                                  color: const Color(0xFFBCAAA4),
+                                  fontSize: isCompact ? 14 : 16,
                                   fontFamily: 'serif',
                                 ),
+                                // 🌟 以下の行を追加しておくと、さらにタップ領域が広がりミスが減ります
+                                contentPadding: EdgeInsets.zero, 
                               ),
                             ),
                             // Counter at top right
@@ -200,32 +214,9 @@ class _InputScreenState extends State<InputScreen> {
               ),
               const SizedBox(height: 32),
               // Buttons
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: widget.onBack,
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        side: const BorderSide(color: Color(0xFFE2C9C5), width: 1.5),
-                        backgroundColor: const Color(0xFFFDF9F1),
-                      ),
-                      child: const Text(
-                        '戻る',
-                        style: TextStyle(
-                          color: Color(0xFFC77A85),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Container(
+              // 以前の Row(...) から始まる塊を、以下に置き換えてください
+                    Container(
+                      width: double.infinity, // 🌟 画面横幅いっぱいに広がる
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(30),
                         gradient: const LinearGradient(
@@ -263,19 +254,16 @@ class _InputScreenState extends State<InputScreen> {
                                   strokeWidth: 2.5,
                                 ),
                               )
-                            : const Text(
+                            : Text(
                                 '保存する ✨',
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 16,
+                                  fontSize: isCompact ? 15 : 16,
                                 ),
                               ),
                       ),
                     ),
-                  ),
-                ],
-              ),
               const SizedBox(height: 16),
             ],
           ),

@@ -100,6 +100,11 @@ class _CollectionScreenState extends State<CollectionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isCompact = screenWidth < 360;
+    final crossAxisCount = screenWidth < 360 ? 2 : screenWidth < 700 ? 3 : 4;
+    final childAspectRatio = screenWidth < 360 ? 0.70 : screenWidth < 700 ? 0.68 : 0.72;
+    final horizontalPadding = isCompact ? 12.0 : 16.0;
     final selectedCategory = categories[_selectedIndex];
     final bool isSelectedAcquired = _unlockedCategories.contains(
       selectedCategory['title'],
@@ -151,17 +156,16 @@ class _CollectionScreenState extends State<CollectionScreen> {
               children: [
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16.0,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: horizontalPadding,
                       vertical: 8.0,
                     ),
                     child: GridView.builder(
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: crossAxisCount,
                             mainAxisSpacing: 16,
                             crossAxisSpacing: 16,
-                            childAspectRatio: 0.68,
+                            childAspectRatio: childAspectRatio,
                           ),
                       itemCount: categories.length,
                       itemBuilder: (context, index) {
@@ -212,7 +216,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
                                 CoinWidget(
                                   category: category,
                                   isAcquired: isAcquired,
-                                  size: 68.0,
+                                  size: isCompact ? 54.0 : 68.0,
                                 ),
                                 const SizedBox(height: 10),
                                 Padding(
@@ -291,7 +295,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
                       CoinWidget(
                         category: selectedCategory,
                         isAcquired: isSelectedAcquired,
-                        size: 64.0,
+                        size: isCompact ? 52.0 : 64.0,
                       ),
                       const SizedBox(width: 16),
                       Expanded(
