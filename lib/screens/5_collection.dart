@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../services/coin_style_service.dart';
 
 class CollectionScreen extends StatefulWidget {
   const CollectionScreen({super.key});
@@ -15,80 +16,80 @@ class _CollectionScreenState extends State<CollectionScreen> {
   Set<String> _unlockedCategories = {};
   Map<String, Map<String, dynamic>> _latestAcquiredByCategory = {};
 
-  static const Map<String, Color> _coinColorMap = {
-    'heart_pink': Color(0xFFF06292),
-    'star_blue': Color(0xFF64B5F6),
-    'star_yellow': Color(0xFFFFD54F),
-    'leaf_green': Color(0xFF81C784),
-    'star_purple': Color(0xFFBA68C8),
-    'flower_orange': Color(0xFFFF8A65),
-    'flower_pink': Color(0xFFF48FB1),
-    'note_blue': Color(0xFF4FC3F7),
-  };
-
   final List<Map<String, dynamic>> categories = [
     {
+      'id': 'sunny_blue',
       'title': '日常・景色',
       'subtitle': '青空、散歩など',
       'icon': Icons.wb_sunny_rounded,
       'color': const Color(0xFF64B5F6),
-      'hint': '朝の散歩やきれいな景色を見たときの出来事を書いてみよう。',
+      'hint':
+          '毎日のちいさな景色や日常に幸せを見つけています。今日は見慣れた風景の中で、いつもと違う「いいな」と感じる瞬間を探してみましょう。',
     },
     {
+      'id': 'heart_pink',
       'title': '友達・対人',
       'subtitle': 'カフェ、会話など',
       'icon': Icons.favorite_rounded,
       'color': const Color(0xFFF06292),
-      'hint': '友だちとの楽しい時間や、誰かとのつながりを感じた出来事を記録しよう。',
+      'hint': '友達や大切な人との交流で幸せを感じやすいようです。近いうちに「ありがとう」や「元気？」の一言を送ってみてください。',
     },
     {
+      'id': 'home_orange',
       'title': '家族',
       'subtitle': '家族団らん、手伝いなど',
       'icon': Icons.home_rounded,
       'color': const Color(0xFFFFB74D),
-      'hint': '家族とのあたたかい時間や、お手伝いした出来事を書こう。',
+      'hint':
+          'これまでのメモには家族とのあたたかい時間が多く書かれています。次は一緒に料理や散歩をして、もっと穏やかな時間を増やしてみましょう。',
     },
     {
+      'id': 'star_yellow',
       'title': '仕事・学校',
       'subtitle': '褒められた、テストなど',
       'icon': Icons.star_rounded,
       'color': const Color(0xFFFFD54F),
-      'hint': '頑張ったことや達成感を感じた体験をメモしてみよう。',
+      'hint': '日々の頑張りや達成感が大きな支えになっています。小さなひとつを終えた後に、自分をほめる時間を作ってみてください。',
     },
     {
+      'id': 'food_green',
       'title': '食事',
       'subtitle': '美味しいもの、自炊など',
       'icon': Icons.restaurant_rounded,
       'color': const Color(0xFF81C784),
-      'hint': 'おいしかった食事や、料理したときの気持ちを書いてみよう。',
+      'hint': '美味しい食事やごはんの時間から幸せを感じています。次はゆっくり味わえる食事を用意して、自分へのご褒美にしてみましょう。',
     },
     {
+      'id': 'music_purple',
       'title': '趣味・推し',
       'subtitle': '音楽、読書、映画など',
       'icon': Icons.music_note_rounded,
       'color': const Color(0xFFBA68C8),
-      'hint': '好きなことに夢中になった瞬間や、新しい発見を書こう。',
+      'hint': '好きなことに触れる時間があなたの元気のもとになっています。少しだけ趣味や推し活動に時間を使ってみると、心が軽くなります。',
     },
     {
+      'id': 'run_teal',
       'title': '運動・健康',
       'subtitle': '筋トレ、よく寝たなど',
       'icon': Icons.directions_run_rounded,
       'color': const Color(0xFF4DB6AC),
-      'hint': '体を動かしたり、休息できた気持ちよさを書き留めよう。',
+      'hint': '体を動かしたときに気分がすっきりしやすいようです。短い散歩や軽い体操を習慣にして、もう少し自分の体と向き合ってみましょう。',
     },
     {
+      'id': 'car_indigo',
       'title': 'お出かけ',
       'subtitle': '旅行、買い物など',
       'icon': Icons.directions_car_rounded,
       'color': const Color(0xFF7986CB),
-      'hint': '外に出かけた体験や、小さな冒険を書いてみよう。',
+      'hint': '新しい風景や外出で心がリフレッシュしています。近場のお出かけでもいいので、気になる場所に行ってみるといいでしょう。',
     },
     {
+      'id': 'bulb_red',
       'title': '自己成長',
       'subtitle': '新しい発見、挑戦など',
       'icon': Icons.lightbulb_rounded,
       'color': const Color(0xFFE57373),
-      'hint': '新しいことに挑戦したり、成長を感じた出来事を書こう。',
+      'hint': '挑戦や学びを通じて幸せを感じる傾向があります。今日の経験を振り返り、次にやってみたいことを小さく決めてみてください。',
     },
   ];
 
@@ -102,14 +103,22 @@ class _CollectionScreenState extends State<CollectionScreen> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isCompact = screenWidth < 360;
-    final crossAxisCount = screenWidth < 360 ? 2 : screenWidth < 700 ? 3 : 4;
-    final childAspectRatio = screenWidth < 360 ? 0.70 : screenWidth < 700 ? 0.68 : 0.72;
+    final crossAxisCount = screenWidth < 360
+        ? 2
+        : screenWidth < 700
+        ? 3
+        : 4;
+    final childAspectRatio = screenWidth < 360
+        ? 0.70
+        : screenWidth < 700
+        ? 0.68
+        : 0.72;
     final horizontalPadding = isCompact ? 12.0 : 16.0;
     final selectedCategory = categories[_selectedIndex];
     final bool isSelectedAcquired = _unlockedCategories.contains(
-      selectedCategory['title'],
+      selectedCategory['id'],
     );
-    final selectedRecord = _latestAcquiredByCategory[selectedCategory['title']];
+    final selectedRecord = _latestAcquiredByCategory[selectedCategory['id']];
 
     return DefaultTabController(
       length: 2,
@@ -122,24 +131,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
             icon: const Icon(Icons.arrow_back, color: Color(0xFF4A4A4A)),
             onPressed: () => Navigator.pop(context),
           ),
-          title: Column(
-            children: [
-              const Text(
-                'コレクション',
-                style: TextStyle(
-                  color: Color(0xFF4A4A4A),
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '(${_unlockedCategories.length} / ${categories.length})',
-                style: const TextStyle(color: Colors.grey, fontSize: 12),
-              ),
-            ],
-          ),
-          centerTitle: true,
+
           bottom: const TabBar(
             indicatorColor: Color(0xFFFF5A79),
             labelColor: Color(0xFF4A4A4A),
@@ -160,109 +152,131 @@ class _CollectionScreenState extends State<CollectionScreen> {
                       horizontal: horizontalPadding,
                       vertical: 8.0,
                     ),
-                    child: GridView.builder(
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: crossAxisCount,
-                            mainAxisSpacing: 16,
-                            crossAxisSpacing: 16,
-                            childAspectRatio: childAspectRatio,
-                          ),
-                      itemCount: categories.length,
-                      itemBuilder: (context, index) {
-                        final category = categories[index];
-                        final isSelected = _selectedIndex == index;
-                        final bool isAcquired = _unlockedCategories.contains(
-                          category['title'],
-                        );
-                        final lastRecord =
-                            _latestAcquiredByCategory[category['title']];
-                        final lastDate = lastRecord != null
-                            ? _formatDateTime(
-                                lastRecord['created_at'],
-                              ).split(' ').first
-                            : null;
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final rows = (categories.length / crossAxisCount)
+                            .ceil();
+                        final width = constraints.maxWidth;
+                        final height = constraints.maxHeight;
 
-                        return GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _selectedIndex = index;
-                            });
-                          },
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: isAcquired
-                                  ? Colors.white
-                                  : const Color(0xFFF8F8F8),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: isSelected
-                                    ? (isAcquired
-                                          ? category['color'].withOpacity(0.6)
-                                          : Colors.grey.withOpacity(0.4))
-                                    : Colors.transparent,
-                                width: 2,
+                        final itemWidth =
+                            (width - (16 * (crossAxisCount - 1))) /
+                            crossAxisCount;
+                        final itemHeight = (height - (16 * (rows - 1))) / rows;
+
+                        // Prevent division by zero or negative heights
+                        final aspectRatio = itemHeight > 0
+                            ? itemWidth / itemHeight
+                            : 1.0;
+
+                        return GridView.builder(
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: crossAxisCount,
+                                mainAxisSpacing: 16,
+                                crossAxisSpacing: 16,
+                                childAspectRatio: aspectRatio,
                               ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.03),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                CoinWidget(
-                                  category: category,
-                                  isAcquired: isAcquired,
-                                  size: isCompact ? 54.0 : 68.0,
-                                ),
-                                const SizedBox(height: 10),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 4.0,
+                          itemCount: categories.length,
+                          itemBuilder: (context, index) {
+                            final category = categories[index];
+                            final isSelected = _selectedIndex == index;
+                            final bool isAcquired = _unlockedCategories
+                                .contains(category['id']);
+                            final lastRecord =
+                                _latestAcquiredByCategory[category['id']];
+                            final lastDate = lastRecord != null
+                                ? _formatDateTime(
+                                    lastRecord['created_at'],
+                                  ).split(' ').first
+                                : null;
+
+                            return GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _selectedIndex = index;
+                                });
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: isAcquired
+                                      ? Colors.white
+                                      : const Color(0xFFF8F8F8),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? (isAcquired
+                                              ? category['color'].withOpacity(
+                                                  0.6,
+                                                )
+                                              : Colors.grey.withOpacity(0.4))
+                                        : Colors.transparent,
+                                    width: 2,
                                   ),
-                                  child: Text(
-                                    isAcquired ? category['title'] : '？',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                      color: isAcquired
-                                          ? const Color(0xFF4A4A4A)
-                                          : Colors.grey,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.03),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
                                     ),
-                                    textAlign: TextAlign.center,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
+                                  ],
                                 ),
-                                const SizedBox(height: 2),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 4.0,
-                                  ),
-                                  child: Text(
-                                    isAcquired
-                                        ? (lastDate != null
-                                              ? '最後の獲得: $lastDate'
-                                              : category['subtitle'])
-                                        : category['hint'],
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color: isAcquired
-                                          ? Colors.grey
-                                          : Colors.grey.shade600,
-                                      fontWeight: FontWeight.w500,
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    CoinWidget(
+                                      category: category,
+                                      isAcquired: isAcquired,
+                                      size: isCompact ? 54.0 : 68.0,
                                     ),
-                                    textAlign: TextAlign.center,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
+                                    const SizedBox(height: 10),
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 4.0,
+                                      ),
+                                      child: Text(
+                                        isAcquired ? category['title'] : '？',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                          color: isAcquired
+                                              ? const Color(0xFF4A4A4A)
+                                              : Colors.grey,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 4.0,
+                                      ),
+                                      child: Text(
+                                        isAcquired
+                                            ? (lastDate != null
+                                                  ? '最後の獲得: $lastDate'
+                                                  : category['subtitle'])
+                                            : '????/??/??',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: isAcquired
+                                              ? Colors.grey
+                                              : Colors.grey.shade600,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                          ),
+                              ),
+                            );
+                          },
                         );
                       },
                     ),
@@ -375,7 +389,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
                           ),
                           SizedBox(height: 12),
                           Text(
-                            '気になった出来事を書いて、AIコメントを受け取ってみましょう。',
+                            '気になった出来事を書いて、コメントを受け取ってみましょう。',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 14,
@@ -395,8 +409,25 @@ class _CollectionScreenState extends State<CollectionScreen> {
                         final aiComment = record['ai_comment'] as String? ?? '';
                         final createdAt = _formatDateTime(record['created_at']);
                         final coinType = record['coin_type'] as String?;
-                        final aiColor =
-                            _coinColorMap[coinType] ?? const Color(0xFF9E2B4F);
+
+                        // Map legacy coin_types for display colors too
+                        String mappedCoinType = coinType ?? '';
+                        const legacyMap = {
+                          'star_blue': 'sunny_blue',
+                          'leaf_green': 'run_teal',
+                          'star_purple': 'music_purple',
+                          'flower_orange': 'home_orange',
+                          'flower_pink': 'heart_pink',
+                          'note_blue': 'sunny_blue',
+                        };
+                        if (legacyMap.containsKey(mappedCoinType)) {
+                          mappedCoinType = legacyMap[mappedCoinType]!;
+                        }
+
+                        final appearance = CoinStyleService.buildCoinAppearance(
+                          coinType: mappedCoinType,
+                        );
+                        final aiColor = appearance['color'] as Color;
 
                         return Container(
                           decoration: BoxDecoration(
@@ -454,7 +485,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
                                           CrossAxisAlignment.stretch,
                                       children: [
                                         Text(
-                                          'AIからの返答',
+                                          'コメント',
                                           style: TextStyle(
                                             fontSize: 12,
                                             fontWeight: FontWeight.bold,
@@ -524,21 +555,35 @@ class _CollectionScreenState extends State<CollectionScreen> {
       final latestByCategory = <String, Map<String, dynamic>>{};
 
       for (final record in records) {
-        final categoryName = (record['category'] as String?)?.trim();
-        if (categoryName == null || categoryName.isEmpty) continue;
+        String? coinType = (record['coin_type'] as String?)?.trim();
 
-        unlocked.add(categoryName);
+        const legacyMap = {
+          'star_blue': 'sunny_blue',
+          'leaf_green': 'run_teal',
+          'star_purple': 'music_purple',
+          'flower_orange': 'home_orange',
+          'flower_pink': 'heart_pink',
+          'note_blue': 'sunny_blue',
+        };
 
-        final current = latestByCategory[categoryName];
+        if (legacyMap.containsKey(coinType)) {
+          coinType = legacyMap[coinType];
+        }
+
+        if (coinType == null || coinType.isEmpty) continue;
+
+        unlocked.add(coinType);
+
+        final current = latestByCategory[coinType];
         final recordDate = _parseCreatedAt(record['created_at']);
         if (recordDate == null) continue;
 
         if (current == null) {
-          latestByCategory[categoryName] = record;
+          latestByCategory[coinType] = record;
         } else {
           final currentDate = _parseCreatedAt(current['created_at']);
           if (currentDate != null && recordDate.isAfter(currentDate)) {
-            latestByCategory[categoryName] = record;
+            latestByCategory[coinType] = record;
           }
         }
       }

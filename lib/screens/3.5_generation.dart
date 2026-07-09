@@ -6,11 +6,13 @@ import '../services/coin_style_service.dart';
 class PiggyBankTransitionScreen extends StatefulWidget {
   final Map<String, dynamic> coinCategory;
   final int currentCoins;
+  final List<Map<String, dynamic>> coinRecords;
 
   const PiggyBankTransitionScreen({
     super.key,
     required this.coinCategory,
     required this.currentCoins,
+    this.coinRecords = const [],
   });
 
   @override
@@ -78,18 +80,13 @@ class _PiggyBankTransitionScreenState extends State<PiggyBankTransitionScreen>
       coinType: widget.coinCategory['coin_type'] as String?,
     );
 
-    // Determine TimeOfDayTheme based on current hour
+    // テーマ計算はそのまま
     final hour = DateTime.now().hour;
     TimeOfDayTheme theme;
-    if (hour >= 5 && hour < 10) {
-      theme = TimeOfDayTheme.morning;
-    } else if (hour >= 10 && hour < 16) {
-      theme = TimeOfDayTheme.day;
-    } else if (hour >= 16 && hour < 19) {
-      theme = TimeOfDayTheme.evening;
-    } else {
-      theme = TimeOfDayTheme.night;
-    }
+    if (hour >= 5 && hour < 10) theme = TimeOfDayTheme.morning;
+    else if (hour >= 10 && hour < 16) theme = TimeOfDayTheme.day;
+    else if (hour >= 16 && hour < 19) theme = TimeOfDayTheme.evening;
+    else theme = TimeOfDayTheme.night;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -97,14 +94,14 @@ class _PiggyBankTransitionScreenState extends State<PiggyBankTransitionScreen>
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Full Screen Background
+          // 1. 背景
           Positioned.fill(
             child: CustomPaint(
               painter: PiggyBankBackgroundPainter(theme: theme),
             ),
           ),
           
-          // Foreground
+          // 2. 前面コンテンツ
           SafeArea(
             child: Column(
               children: [
@@ -124,41 +121,39 @@ class _PiggyBankTransitionScreenState extends State<PiggyBankTransitionScreen>
                     ],
                   ),
                 ),
+                const SizedBox(height: 40),
+                // ここでアニメーションを適用
                 Expanded(
                   child: AnimatedBuilder(
                     animation: _controller,
                     builder: (context, child) {
                       return IgnorePointer(
-                        child: Center(
-                          child: Padding(
-                            padding: const EdgeInsets.only(top: 20),
-                            child: GlassPiggyBank(
-                              currentCoins: widget.currentCoins,
-                              fallingCoin: Positioned(
-                                left: 164,
-                                top: _fallAnimation.value,
-                                child: Transform.scale(
-                                  scale: _scaleAnimation.value,
-                                  child: Opacity(
-                                    opacity: _opacityAnimation.value,
-                                    child: Transform(
-                                      alignment: Alignment.center,
-                                      transform: Matrix4.identity()
-                                        ..setEntry(3, 2, 0.001)
-                                        ..rotateY(
-                                          _controller.value * math.pi * 8,
-                                        ),
-                                      child: Coin3D(
-                                        category: {
-                                          'icon': appearance['icon'],
-                                          'color': appearance['color'],
-                                        },
-                                        size: 50,
-                                        angleX: 0.2,
-                                        angleY: 0,
-                                        angleZ: 0,
-                                      ),
-                                    ),
+                        child: PiggyBankCard(
+                          theme: theme,
+                          currentCoins: widget.currentCoins,
+                          coinRecords: widget.coinRecords,
+                          showCollectionButton: false,
+                          fallingCoin: Positioned(
+                            left: 164,
+                            top: _fallAnimation.value,
+                            child: Transform.scale(
+                              scale: _scaleAnimation.value,
+                              child: Opacity(
+                                opacity: _opacityAnimation.value,
+                                child: Transform(
+                                  alignment: Alignment.center,
+                                  transform: Matrix4.identity()
+                                    ..setEntry(3, 2, 0.001)
+                                    ..rotateY(_controller.value * math.pi * 8),
+                                  child: Coin3D(
+                                    category: {
+                                      'icon': appearance['icon'],
+                                      'color': appearance['color'],
+                                    },
+                                    size: 50,
+                                    angleX: 0.2,
+                                    angleY: 0,
+                                    angleZ: 0,
                                   ),
                                 ),
                               ),
@@ -176,4 +171,4 @@ class _PiggyBankTransitionScreenState extends State<PiggyBankTransitionScreen>
       ),
     );
   }
-}
+ 

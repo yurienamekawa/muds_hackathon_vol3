@@ -29,11 +29,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   void initState() {
     super.initState();
     _averageScores = {
-      'score_tsunagari': 3.0,
-      'score_wakuwaku': 3.0,
-      'score_kansha': 3.0,
-      'score_tassei': 3.0,
-      'score_iyashi': 3.0,
+      'score_tsunagari': 0.0,
+      'score_wakuwaku': 0.0,
+      'score_kansha': 0.0,
+      'score_tassei': 0.0,
+      'score_iyashi': 0.0,
     };
     _dailyCounts = {};
     _topCategory = '日常・景色';
@@ -141,7 +141,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     }
     return sums.map((key, sum) {
       final count = counts[key]!;
-      return MapEntry(key, count > 0 ? sum / count : 3.0);
+      return MapEntry(key, count > 0 ? sum / count : 0.0);
     });
   }
 
@@ -177,15 +177,16 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           '毎日のちいさな景色や日常に幸せを見つけています。今日は見慣れた風景の中で、いつもと違う「いいな」と感じる瞬間を探してみましょう。',
     };
 
+    // 🌟 定型文を消して message だけを返すように変更
     final message =
         advice[topCategory] ??
         'これまでの記録から、あなたが感じる幸せのヒントが見えてきました。日々の中で心地よいことを大切にしてみましょう。';
-    return 'これまでのメモをもとに、あなたがどんなときに幸せを感じやすいかを分析しました。$message';
+    return message;
   }
 
   String _buildRadarSummary() {
-    if (_averageScores.isEmpty) {
-      return 'まだ分析できる記録がありません。';
+    if (_averageScores.values.every((v) => v == 0.0)) {
+      return '📈日々の記録から、あなたがどのような瞬間に幸せを感じやすいかを5つの指標で可視化します📈';
     }
     final sorted = _averageScores.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
@@ -199,11 +200,6 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final horizontalPadding = screenWidth < 360 ? 8.0 : 12.0;
-    final chartHeight = screenWidth < 360
-        ? 200.0
-        : screenWidth < 600
-        ? 240.0
-        : 280.0;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F0E8),
@@ -217,91 +213,114 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _loadAnalytics,
-              color: const Color(0xFF6B8E23),
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: EdgeInsets.symmetric(
-                  vertical: 8,
-                  horizontal: horizontalPadding,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _buildContributionCard(),
-                    const SizedBox(height: 10),
-                    _buildRadarCard(chartHeight),
-                    const SizedBox(height: 10),
-                    _buildAdviceCard(),
-                    const SizedBox(height: 8),
-                  ],
-                ),
-              ),
+          : LayoutBuilder(
+              builder: (context, constraints) {
+                return RefreshIndicator(
+                  onRefresh: _loadAnalytics,
+                  color: const Color(0xFF6B8E23),
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(
+                      parent: ClampingScrollPhysics(),
+                    ),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: constraints.maxHeight,
+                        maxHeight: constraints.maxHeight,
+                      ),
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          vertical: 4,
+                          horizontal: horizontalPadding,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _buildContributionCard(),
+                            const SizedBox(height: 12),
+                            Flexible(
+                              fit: FlexFit.loose,
+                              child: _buildRadarCard(),
+                            ),
+                            const SizedBox(height: 12),
+                            _buildAdviceCard(),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
     );
   }
 
   Widget _buildContributionCard() {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      elevation: 0,
-      color: Colors.white,
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFA718F).withOpacity(0.15),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              '記録の継続グラフ',
+              '🌿 記録の継続グラフ',
               style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
             ContributionGrid(dailyCounts: _dailyCounts),
-            const SizedBox(height: 10),
-            Row(
-              // mainAxisAlignment: MainAxisAlignment.center, // 横並びにして中央寄せ
-              children: [ // ここは const を外してもOKです
-                _ContributionLegendDot(color: const Color(0xFFF1F1F1), label: '未記録'),
-                const SizedBox(width: 12),
-                _ContributionLegendDot(color: const Color(0xFFB6D7A8), label: '1件'),
-                const SizedBox(width: 12),
-                _ContributionLegendDot(color: const Color(0xFF6B8E23), label: '2件以上'),
-              ],
-            )
           ],
         ),
       ),
     );
   }
 
-  Widget _buildRadarCard(double chartHeight) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      elevation: 0,
-      color: Colors.white,
+  Widget _buildRadarCard() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFA718F).withOpacity(0.15),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              '感情のバランス',
+              '💖 感情のバランス',
               style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 4),
-            SizedBox(
-              width: double.infinity,
-              height: chartHeight,
-              child: RadarChart(values: _averageScores, labels: _scoreLabels),
+            const SizedBox(height: 2),
+            Flexible(
+              fit: FlexFit.loose,
+              child: AspectRatio(
+                aspectRatio: 1.2,
+                child: RadarChart(values: _averageScores, labels: _scoreLabels),
+              ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
             Text(
               _buildRadarSummary(),
               style: const TextStyle(
-                fontSize: 13,
+                fontSize: 14,
                 color: Color(0xFF4A4A4A),
-                height: 1.4,
+                height: 1.5,
               ),
             ),
           ],
@@ -311,26 +330,34 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   }
 
   Widget _buildAdviceCard() {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      elevation: 0,
-      color: Colors.white,
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFFA718F).withOpacity(0.15),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'AIからのメッセージ',
+              '💌 あなたへのメッセージ',
               style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 4),
             Text(
               _adviceMessage,
               style: const TextStyle(
-                fontSize: 13,
+                fontSize: 14,
                 color: Color(0xFF4A4A4A),
-                height: 1.4,
+                height: 1.5,
               ),
             ),
           ],
@@ -340,14 +367,60 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   }
 }
 
-class ContributionGrid extends StatelessWidget {
+class ContributionGrid extends StatefulWidget {
   final Map<DateTime, int> dailyCounts;
-  static const _weekdayLabels = ['月', '火', '水', '木', '金', '土', '日'];
 
   const ContributionGrid({super.key, required this.dailyCounts});
 
   @override
+  State<ContributionGrid> createState() => _ContributionGridState();
+}
+
+class _ContributionGridState extends State<ContributionGrid> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 1500),
+          curve: Curves.easeOutQuart,
+        );
+      }
+    });
+  }
+
+  @override
+  void didUpdateWidget(ContributionGrid oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.dailyCounts != oldWidget.dailyCounts) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 1500),
+            curve: Curves.easeOutQuart,
+          );
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final dailyCounts = widget.dailyCounts;
+    final maxCount = dailyCounts.values.isEmpty
+        ? 0
+        : dailyCounts.values.reduce(math.max);
     final sortedDays = dailyCounts.keys.toList()..sort();
     if (sortedDays.isEmpty) {
       return const SizedBox.shrink();
@@ -373,80 +446,32 @@ class ContributionGrid extends StatelessWidget {
       }
     }
 
-    final monthLabels = <int, String>{};
-    int? currentMonth;
-    for (final date in sortedDays) {
-      if (date.month != currentMonth) {
-        final column = date.difference(firstColumnStart).inDays ~/ 7;
-        monthLabels[column] = '${date.month}月';
-        currentMonth = date.month;
-      }
-    }
-
     return LayoutBuilder(
       builder: (context, constraints) {
-        const leftLabelWidth = 28.0;
         const cellSize = 18.0;
         const cellGap = 2.0;
         final totalWidth =
-            leftLabelWidth +
-            totalColumns * cellSize +
-            math.max(0, totalColumns - 1) * cellGap;
-        final labelHeight = 20.0;
+            totalColumns * cellSize + math.max(0, totalColumns - 1) * cellGap;
 
         return SingleChildScrollView(
           scrollDirection: Axis.horizontal,
+          controller: _scrollController,
           child: SizedBox(
             width: totalWidth,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(
-                  height: labelHeight,
-                  child: Row(
-                    children: [
-                      SizedBox(width: leftLabelWidth),
-                      for (var col = 0; col < totalColumns; col++) ...[
-                        SizedBox(
-                          width: cellSize,
-                          child: Center(
-                            child: Text(
-                              monthLabels[col] ?? '',
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: Color(0xFF6B6B6B),
-                              ),
-                            ),
-                          ),
-                        ),
-                        if (col != totalColumns - 1)
-                          const SizedBox(width: cellGap),
-                      ],
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 4),
                 for (var rowIndex = 0; rowIndex < 7; rowIndex++) ...[
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      SizedBox(
-                        width: leftLabelWidth,
-                        child: Text(
-                          _weekdayLabels[rowIndex],
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: Color(0xFF6B6B6B),
-                          ),
-                        ),
-                      ),
                       for (var col = 0; col < totalColumns; col++) ...[
                         SizedBox(
                           width: cellSize,
                           height: cellSize,
                           child: _ContributionCell(
                             count: dailyCounts[grid[rowIndex][col]] ?? 0,
+                            maxCount: maxCount,
                           ),
                         ),
                         if (col != totalColumns - 1)
@@ -467,16 +492,30 @@ class ContributionGrid extends StatelessWidget {
 
 class _ContributionCell extends StatelessWidget {
   final int count;
+  final int maxCount;
 
-  const _ContributionCell({required this.count});
+  const _ContributionCell({required this.count, required this.maxCount});
 
   @override
   Widget build(BuildContext context) {
-    final color = count == 0
-        ? const Color(0xFFECECEC)
-        : count == 1
-        ? const Color(0xFFB6D7A8)
-        : const Color(0xFF6B8E23);
+    Color color;
+    if (count == 0) {
+      color = const Color(0xFFECECEC); // 未記録
+    } else {
+      final ratio = maxCount == 0 ? 0.0 : count / maxCount;
+
+      if (ratio <= 0.2)
+        color = const Color(0xFFD1E7C5);
+      else if (ratio <= 0.4)
+        color = const Color(0xFFB6D7A8);
+      else if (ratio <= 0.6)
+        color = const Color(0xFF93C47D);
+      else if (ratio <= 0.8)
+        color = const Color(0xFF6B8E23);
+      else
+        color = const Color(0xFF4A6B1A);
+    }
+
     return AspectRatio(
       aspectRatio: 1,
       child: Container(
@@ -541,7 +580,10 @@ class _RadarChartPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = math.min(size.width, size.height) * 0.36;
+    final radius = math.max(
+      0.0,
+      math.min(size.width / 2 - 58, size.height / 2 - 15),
+    );
     final pointCount = values.length;
     final angleStep = 2 * math.pi / pointCount;
 
@@ -549,11 +591,6 @@ class _RadarChartPainter extends CustomPainter {
       ..color = const Color(0xFFEBF4EA)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1;
-
-    final borderPaint = Paint()
-      ..color = const Color(0xFF94BF8B)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0;
 
     for (int level = 1; level <= 5; level++) {
       final levelRadius = radius * level / 5;
@@ -573,7 +610,6 @@ class _RadarChartPainter extends CustomPainter {
       path.close();
       canvas.drawPath(path, gridPaint);
     }
-    canvas.drawCircle(center, radius, borderPaint);
 
     final fillPath = Path();
     final pointPaint = Paint()
@@ -609,7 +645,7 @@ class _RadarChartPainter extends CustomPainter {
     for (final entry in values.entries) {
       final label = labels[entry.key] ?? entry.key;
       final angle = angleStep * index - math.pi / 2;
-      final labelRadius = radius + 46;
+      final labelRadius = radius + 4;
       final labelPoint = Offset(
         center.dx + labelRadius * math.cos(angle),
         center.dy + labelRadius * math.sin(angle),
@@ -617,7 +653,7 @@ class _RadarChartPainter extends CustomPainter {
       final textPainter = TextPainter(
         text: TextSpan(
           text: label,
-          style: const TextStyle(fontSize: 12, color: Color(0xFF4A4A4A)),
+          style: const TextStyle(fontSize: 11, color: Color(0xFF4A4A4A)),
         ),
         textAlign: TextAlign.center,
         textDirection: TextDirection.ltr,
