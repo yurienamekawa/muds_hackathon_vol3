@@ -114,7 +114,7 @@ class _PiggyBankTransitionScreenState extends State<PiggyBankTransitionScreen>
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        '幸せを貯金しています........',
+                        '幸せを貯金しています.........',
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,

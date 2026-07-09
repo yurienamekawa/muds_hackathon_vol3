@@ -103,7 +103,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   final confirmed = await showDialog<bool>(
                     context: context,
                     builder: (context) => AlertDialog(
-                      title: const Text('退会しますか？'),
+                      title: const Text('退会しますか?'),
                       content: const Text('アカウントと全てのデータが削除されます。'),
                       actions: [
                         TextButton(
