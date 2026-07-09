@@ -7,6 +7,8 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:sensors_plus/sensors_plus.dart';
 import '5_collection.dart';
+import '6_mindmap.dart';
+import '../widgets/animated_thought_bubble.dart';
 import '../services/coin_style_service.dart';
 
 enum TimeOfDayTheme { morning, day, evening, night }
@@ -158,21 +160,40 @@ class _HomeScreenState extends State<HomeScreen> {
                 _buildTimeSelector(),
                 // Glass Piggy Bank (Fills the remaining space)
                 Expanded(
-                  child: Center(
-                    child: GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const CollectionScreen(),
+                  child: Stack(
+                    children: [
+                      Center(
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const CollectionScreen(),
+                              ),
+                            );
+                          },
+                          child: GlassPiggyBank(
+                            currentCoins: _coinCount,
+                            coinRecords: _coinRecords,
                           ),
-                        );
-                      },
-                      child: GlassPiggyBank(
-                        currentCoins: _coinCount,
-                        coinRecords: _coinRecords,
+                        ),
                       ),
-                    ),
+                      // Mindmap Button
+                      Positioned(
+                        top: 80,
+                        left: 60,
+                        child: AnimatedThoughtBubble(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const MindmapScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 
@@ -389,6 +410,40 @@ class PiggyBankCard extends StatelessWidget {
                       currentCoins: currentCoins,
                       fallingCoin: fallingCoin,
                       coinRecords: coinRecords,
+                    ),
+                  ),
+                ),
+
+                // Mindmap Button
+                Positioned(
+                  top: 16,
+                  left: 16,
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const MindmapScreen(),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.9),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Text(
+                        '💭',
+                        style: TextStyle(fontSize: 24),
+                      ),
                     ),
                   ),
                 ),
