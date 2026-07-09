@@ -73,17 +73,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isCompact = screenWidth < 360;
-    final horizontalPadding = isCompact ? 16.0 : 20.0;
-    final maxWidth = screenWidth < 700 ? screenWidth : 640.0;
-    final cardHeight = screenWidth < 360
-        ? 320.0
-        : screenWidth < 600
-        ? 360.0
-        : 420.0;
-
     return Scaffold(
+      extendBodyBehindAppBar: true,
+      backgroundColor: Colors.transparent,
       drawer: Drawer(
         backgroundColor: const Color(0xFFFDF7EE),
         child: SafeArea(
@@ -143,199 +135,144 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
-      backgroundColor: const Color(0xFFFDF7EE),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFDF7EE),
+        backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: Color(0xFF4A4A4A)),
       ),
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: maxWidth),
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  const SizedBox(height: 20),
-                  const SizedBox(height: 24),
-                  _buildTimeSelector(),// ここで時間を操作
-                  const SizedBox(height: 24),
-                  PiggyBankCard(
-                    currentCoins: _coinCount,
-                    theme: _currentTheme,
-                    height: cardHeight,
-                    coinRecords: _coinRecords,
-                  ),
-                  // PiggyBankCard(
-                  //   currentCoins: widget.currentCoins,
-                  //   theme: _currentTheme,
-                  //   height: cardHeight,
-                  //   coinRecords: _coinRecords,
-                  // ),
-                  const SizedBox(height: 30),
-                  Container(
-                    width: double.infinity,
-                    margin: EdgeInsets.symmetric(horizontal: horizontalPadding),
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 20,
-                      horizontal: 16,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.03),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: const Column(
-                      children: [
-                        Text(
-                          '今日もポジティブを',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF4A4A4A),
-                          ),
-                        ),
-                        SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              '貯めていこう！',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF4A4A4A),
-                              ),
-                            ),
-                            Text(' 💗', style: TextStyle(fontSize: 18)),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 30),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Transform.rotate(
-                        angle: -0.2,
-                        child: const Icon(
-                          Icons.vibration_rounded,
-                          color: Color(0xFFFF5A79),
-                          size: 40,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      const Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'スマホをシェイクすると',
-                            style: TextStyle(
-                              fontSize: 15,
-                              color: Color(0xFF666666),
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            '貯金箱のコインが揺れるよ！',
-                            style: TextStyle(
-                              fontSize: 15,
-                              color: Color(0xFF666666),
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 40),
-                  
-                ],
-              ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          // Background Landscape
+          Positioned.fill(
+            child: CustomPaint(
+              painter: PiggyBankBackgroundPainter(theme: _currentTheme),
             ),
           ),
-        ),
+          
+          // Foreground Content
+          SafeArea(
+            child: Column(
+              children: [
+                const SizedBox(height: 10),
+                _buildTimeSelector(),
+                // Glass Piggy Bank (Fills the remaining space)
+                Expanded(
+                  child: Center(
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const CollectionScreen(),
+                          ),
+                        );
+                      },
+                      child: GlassPiggyBank(
+                        currentCoins: _coinCount,
+                        coinRecords: _coinRecords,
+                      ),
+                    ),
+                  ),
+                ),
+                
+                // Collection Button at the bottom
+                Align(
+                  alignment: Alignment.bottomRight,
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 20.0, bottom: 20.0),
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const CollectionScreen(),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Icon(
+                              Icons.auto_awesome,
+                              color: Color(0xFFFF5A79),
+                              size: 16,
+                            ),
+                            SizedBox(width: 6),
+                            Text(
+                              'コレクション',
+                              style: TextStyle(
+                                color: Color(0xFFFF5A79),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildTimeSelector() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24),
-      height: 56,
+      margin: const EdgeInsets.symmetric(horizontal: 40),
+      height: 36,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 15,
-            offset: const Offset(0, 6),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
           child: Container(
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  const Color(0xFFF9C8C8).withValues(alpha: 0.85), // Light pink
-                  const Color(0xFFD68A9B).withValues(alpha: 0.85),
-                  const Color(0xFF985A75).withValues(alpha: 0.85),
-                  const Color(0xFF5A3152).withValues(alpha: 0.85), // Dark plum
-                ],
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-              ),
+              color: Colors.white.withValues(alpha: 0.15),
               border: Border.all(
                 color: Colors.white.withValues(alpha: 0.3),
-                width: 1.5,
+                width: 1.0,
               ),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(18),
             ),
             child: Row(
               children: [
-                _buildSegment(
-                  TimeOfDayTheme.morning,
-                  '朝',
-                  Icons.wb_twilight,
-                  true,
-                  false,
-                ),
+                _buildSegment(TimeOfDayTheme.morning, '朝', Icons.wb_twilight, true, false),
                 _buildDivider(),
-                _buildSegment(
-                  TimeOfDayTheme.day,
-                  '昼',
-                  Icons.wb_sunny_rounded,
-                  false,
-                  false,
-                ),
+                _buildSegment(TimeOfDayTheme.day, '昼', Icons.wb_sunny_rounded, false, false),
                 _buildDivider(),
-                _buildSegment(
-                  TimeOfDayTheme.evening,
-                  '夕',
-                  Icons.wb_cloudy_outlined,
-                  false,
-                  false,
-                ),
+                _buildSegment(TimeOfDayTheme.evening, '夕', Icons.wb_cloudy_outlined, false, false),
                 _buildDivider(),
-                _buildSegment(
-                  TimeOfDayTheme.night,
-                  '夜',
-                  Icons.nightlight_round,
-                  false,
-                  true,
-                ),
+                _buildSegment(TimeOfDayTheme.night, '夜', Icons.nightlight_round, false, true),
               ],
             ),
           ),
@@ -347,8 +284,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildDivider() {
     return Container(
       width: 1,
-      height: 30,
-      color: Colors.white.withValues(alpha: 0.25),
+      height: 18,
+      color: Colors.white.withValues(alpha: 0.2),
     );
   }
 
@@ -371,36 +308,24 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Container(
           decoration: isSelected
               ? BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.15),
+                  color: Colors.white.withValues(alpha: 0.25),
                   borderRadius: BorderRadius.horizontal(
-                    left: isFirst ? const Radius.circular(15) : Radius.zero,
-                    right: isLast ? const Radius.circular(15) : Radius.zero,
+                    left: isFirst ? const Radius.circular(18) : Radius.zero,
+                    right: isLast ? const Radius.circular(18) : Radius.zero,
                   ),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.5),
-                    width: 1.5,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.white.withValues(alpha: 0.1),
-                      blurRadius: 8,
-                      spreadRadius: 1,
-                    ),
-                  ],
                 )
               : null,
-          child: Column(
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: Colors.white, size: 20),
-              const SizedBox(height: 2),
+              Icon(icon, color: Colors.white, size: 14),
+              const SizedBox(width: 4),
               Text(
                 label,
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  fontFamily: 'serif',
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ],
