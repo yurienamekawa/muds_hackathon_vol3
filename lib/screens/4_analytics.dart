@@ -197,12 +197,21 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final horizontalPadding = screenWidth < 360 ? 8.0 : 12.0;
+    final chartHeight = screenWidth < 360
+        ? 200.0
+        : screenWidth < 600
+        ? 240.0
+        : 280.0;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF5F0E8),
       appBar: AppBar(
+        toolbarHeight: 1,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text('分析'),
+        // title: const Text('分析'),
         centerTitle: false,
         foregroundColor: const Color(0xFF3B3B3B),
       ),
@@ -213,66 +222,23 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               color: const Color(0xFF6B8E23),
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.symmetric(
-                  vertical: 16,
-                  horizontal: 16,
+                padding: EdgeInsets.symmetric(
+                  vertical: 8,
+                  horizontal: horizontalPadding,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _buildContributionCard(),
-                    const SizedBox(height: 16),
-                    _buildRadarCard(),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 10),
+                    _buildRadarCard(chartHeight),
+                    const SizedBox(height: 10),
                     _buildAdviceCard(),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 8),
                   ],
                 ),
               ),
             ),
-    );
-  }
-
-  Widget _buildSummaryCard() {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      elevation: 0,
-      color: Colors.white,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              '今日の記録✏️',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '本日保存した数: $_todayCount 件',
-              style: const TextStyle(fontSize: 14, color: Color(0xFF4A4A4A)),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'これまでの記録: $_totalEntries 件',
-              style: const TextStyle(fontSize: 14, color: Color(0xFF4A4A4A)),
-            ),
-            const SizedBox(height: 16),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF3F8EE),
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Text(
-                _insightMessage,
-                style: const TextStyle(color: Color(0xFF4A4A4A), height: 1.5),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -282,69 +248,60 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       elevation: 0,
       color: Colors.white,
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              '記録の継続グラフ📈',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              '記録の継続グラフ',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 12),
-            const Text(
-              '今日の記録数に応じて草🌱が育ちます。',
-              style: TextStyle(fontSize: 14, color: Color(0xFF6B6B6B)),
-            ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
             ContributionGrid(dailyCounts: _dailyCounts),
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
             Row(
-              children: const [
-                _ContributionLegendDot(color: Color(0xFFF1F1F1), label: '未記録'),
-                SizedBox(width: 12),
-                _ContributionLegendDot(color: Color(0xFFB6D7A8), label: '1件'),
-                SizedBox(width: 12),
-                _ContributionLegendDot(color: Color(0xFF6B8E23), label: '2件以上'),
+              // mainAxisAlignment: MainAxisAlignment.center, // 横並びにして中央寄せ
+              children: [ // ここは const を外してもOKです
+                _ContributionLegendDot(color: const Color(0xFFF1F1F1), label: '未記録'),
+                const SizedBox(width: 12),
+                _ContributionLegendDot(color: const Color(0xFFB6D7A8), label: '1件'),
+                const SizedBox(width: 12),
+                _ContributionLegendDot(color: const Color(0xFF6B8E23), label: '2件以上'),
               ],
-            ),
+            )
           ],
         ),
       ),
     );
   }
 
-  Widget _buildRadarCard() {
+  Widget _buildRadarCard(double chartHeight) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       elevation: 0,
       color: Colors.white,
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              '感情のバランス📊',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              '感情のバランス',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 8),
-            const Text(
-              'これまでの記録をもとに、あなたの幸せの傾向を可視化します。',
-              style: TextStyle(fontSize: 14, color: Color(0xFF6B6B6B)),
-            ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 4),
             SizedBox(
               width: double.infinity,
-              height: 320,
+              height: chartHeight,
               child: RadarChart(values: _averageScores, labels: _scoreLabels),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Text(
               _buildRadarSummary(),
               style: const TextStyle(
-                fontSize: 14,
+                fontSize: 13,
                 color: Color(0xFF4A4A4A),
-                height: 1.6,
+                height: 1.4,
               ),
             ),
           ],
@@ -359,24 +316,21 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       elevation: 0,
       color: Colors.white,
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
-            Text(
-              'AIからのメッセージ💌',
           children: [
             const Text(
               'AIからのメッセージ',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Text(
               _adviceMessage,
               style: const TextStyle(
-                fontSize: 14,
+                fontSize: 13,
                 color: Color(0xFF4A4A4A),
-                height: 1.6,
+                height: 1.4,
               ),
             ),
           ],
@@ -514,7 +468,7 @@ class ContributionGrid extends StatelessWidget {
 class _ContributionCell extends StatelessWidget {
   final int count;
 
-  const _ContributionCell({super.key, required this.count});
+  const _ContributionCell({required this.count});
 
   @override
   Widget build(BuildContext context) {
@@ -539,11 +493,7 @@ class _ContributionLegendDot extends StatelessWidget {
   final Color color;
   final String label;
 
-  const _ContributionLegendDot({
-    super.key,
-    required this.color,
-    required this.label,
-  });
+  const _ContributionLegendDot({required this.color, required this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -560,7 +510,7 @@ class _ContributionLegendDot extends StatelessWidget {
         const SizedBox(width: 6),
         Text(
           label,
-          style: const TextStyle(fontSize: 12, color: Color(0xFF6B6B6B)),
+          style: const TextStyle(fontSize: 11, color: Color(0xFF6B6B6B)),
         ),
       ],
     );
@@ -603,7 +553,7 @@ class _RadarChartPainter extends CustomPainter {
     final borderPaint = Paint()
       ..color = const Color(0xFF94BF8B)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
+      ..strokeWidth = 0;
 
     for (int level = 1; level <= 5; level++) {
       final levelRadius = radius * level / 5;

@@ -7,67 +7,26 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:sensors_plus/sensors_plus.dart';
 import '5_collection.dart';
-import 'dart:math' as math; // 必要であれば
+import '../services/coin_style_service.dart';
 
 enum TimeOfDayTheme { morning, day, evening, night }
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key, this.savedNote = '', this.currentCoins = 128});
-
-// lib/screens/1_home.dart 内の HomeScreen クラスを修正
-class HomeScreen extends StatefulWidget {
-  // 🌟 ここで引数を受け取れるようにします
   final String savedNote;
   final int currentCoins;
 
-  const HomeScreen({
-    super.key, 
-    this.savedNote = '', 
-    this.currentCoins = 0,
-  });
+  const HomeScreen({super.key, this.savedNote = '', this.currentCoins = 0});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  
+  
+
   int _coinCount = 0;
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchCoinCount();
-  }
-
-  Future<void> _fetchCoinCount() async {
-    try {
-      final supabase = Supabase.instance.client;
-      final userId = supabase.auth.currentUser?.id;
-      if (userId == null) return;
-
-      final data = await supabase
-          .from('happy_coins')
-          .select('id')
-          .eq('user_id', userId);
-
-      if (mounted) {
-        setState(() {
-          _coinCount = (data as List).length;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      print('コイン数取得エラー: $e');
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
+  List<Map<String, dynamic>> _coinRecords = [];
   late TimeOfDayTheme _currentTheme;
 
   @override
@@ -83,257 +42,225 @@ class _HomeScreenState extends State<HomeScreen> {
     } else {
       _currentTheme = TimeOfDayTheme.night;
     }
+    _fetchCoinCount();
+  }
+
+  Future<void> _fetchCoinCount() async {
+    try {
+      final supabase = Supabase.instance.client;
+      final userId = supabase.auth.currentUser?.id;
+      if (userId == null) return;
+
+      final data = await supabase
+          .from('happy_coins')
+          .select('id, coin_type, created_at')
+          .eq('user_id', userId)
+          .order('created_at', ascending: false);
+
+      if (mounted) {
+        setState(() {
+          _coinRecords = (data as List<dynamic>?)
+                  ?.cast<Map<String, dynamic>>()
+                  .toList() ??
+              [];
+          _coinCount = _coinRecords.length;
+        });
+      }
+    } catch (e) {
+      print('コイン数取得エラー: $e');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isCompact = screenWidth < 360;
+    final horizontalPadding = isCompact ? 16.0 : 20.0;
+    final maxWidth = screenWidth < 700 ? screenWidth : 640.0;
+    final cardHeight = screenWidth < 360
+        ? 320.0
+        : screenWidth < 600
+        ? 360.0
+        : 420.0;
+
     return Scaffold(
       drawer: Drawer(
-      backgroundColor: const Color(0xFFFDF7EE),
-      child: SafeArea(
-        child: ListView(
-          children: [
-            const Padding(
-              padding: EdgeInsets.all(20),
-              child: Text(
-                "メニュー",
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
+        backgroundColor: const Color(0xFFFDF7EE),
+        child: SafeArea(
+          child: ListView(
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(20),
+                child: Text(
+                  'メニュー',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
               ),
-            ),
-
-          
-
-            
-
-            const Divider(),
-
-            ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text("ログアウト"),
-              onTap: () async {
-                await Supabase.instance.client.auth.signOut();
-              },
-            ),
-
-            ListTile(
-              leading: const Icon(
-                Icons.delete_forever,
-                color: Colors.red,
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.logout),
+                title: const Text('ログアウト'),
+                onTap: () async {
+                  await Supabase.instance.client.auth.signOut();
+                },
               ),
-              title: const Text(
-                "退会",
-                style: TextStyle(color: Colors.red),
-              ),
-              onTap: () async {
-                final confirmed = await showDialog<bool>(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text("退会しますか？"),
-                    content: const Text(
-                      "アカウントと全てのデータが削除されます。",
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () =>
-                            Navigator.pop(context, false),
-                        child: const Text("キャンセル"),
-                      ),
-                      TextButton(
-                        onPressed: () =>
-                            Navigator.pop(context, true),
-                        child: const Text(
-                          "退会する",
-                          style: TextStyle(color: Colors.red),
+              ListTile(
+                leading: const Icon(Icons.delete_forever, color: Colors.red),
+                title: const Text('退会', style: TextStyle(color: Colors.red)),
+                onTap: () async {
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('退会しますか？'),
+                      content: const Text('アカウントと全てのデータが削除されます。'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('キャンセル'),
                         ),
-                      ),
-                    ],
-                  ),
-                );
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: const Text(
+                            '退会する',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
 
-                if (confirmed == true) {
-                  try {
-                    await Supabase.instance.client.rpc('delete_user');
-                    await Supabase.instance.client.auth.signOut();
-                  } catch (e) {
-                    debugPrint(e.toString());
+                  if (confirmed == true) {
+                    try {
+                      await Supabase.instance.client.rpc('delete_user');
+                      await Supabase.instance.client.auth.signOut();
+                    } catch (e) {
+                      debugPrint(e.toString());
+                    }
                   }
-                }
-              },
-            ),
-          ],
+                },
+              ),
+            ],
+          ),
         ),
       ),
-    
-    ),
       backgroundColor: const Color(0xFFFDF7EE),
       appBar: AppBar(
         backgroundColor: const Color(0xFFFDF7EE),
         elevation: 0,
         iconTheme: const IconThemeData(color: Color(0xFF4A4A4A)),
-
-        
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              const SizedBox(height: 20), // 少し調整
-              const SizedBox(height: 10),
-              const Text(
-                '貯まったコイン',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFF5A5A5A),
-                  letterSpacing: 1.5,
-                ),
-              ),
-              const SizedBox(height: 16),
-              const SizedBox(height: 20),
-              const Text('貯まったコイン', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF4A4A4A))),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.end,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxWidth),
+            child: SingleChildScrollView(
+              child: Column(
                 children: [
+                  const SizedBox(height: 20),
+                  const SizedBox(height: 24),
+                  _buildTimeSelector(),// ここで時間を操作
+                  const SizedBox(height: 24),
+                  PiggyBankCard(
+                    currentCoins: _coinCount,
+                    theme: _currentTheme,
+                    height: cardHeight,
+                    coinRecords: _coinRecords,
+                  ),
+                  // PiggyBankCard(
+                  //   currentCoins: widget.currentCoins,
+                  //   theme: _currentTheme,
+                  //   height: cardHeight,
+                  //   coinRecords: _coinRecords,
+                  // ),
+                  const SizedBox(height: 30),
                   Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    child: const CoinWidget(
-                      category: {
-                        'color': Color(0xFFFFD54F),
-                        'icon': Icons.attach_money,
-                      },
-                      isAcquired: true,
-                      size: 52.0,
+                    width: double.infinity,
+                    margin: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 20,
+                      horizontal: 16,
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Text(
-                    '${widget.currentCoins}',
-                    style: const TextStyle(
-                      fontSize: 64,
-                      height: 0.9,
-                      fontWeight: FontWeight.w900,
-                      color: Color(0xFF4A4A4A),
-                      letterSpacing: -1.0,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.03),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Padding(
-                    padding: EdgeInsets.only(bottom: 8.0),
-                    child: Text(
-                      '枚',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w900,
-                        color: Color(0xFF5A5A5A),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              _buildTimeSelector(),
-              const SizedBox(height: 24),
-              PiggyBankCard(currentCoins: widget.currentCoins, theme: _currentTheme),
-              const SizedBox(height: 30),
-              Container(
-                width: double.infinity,
-                margin: const EdgeInsets.symmetric(horizontal: 24),
-                padding: const EdgeInsets.symmetric(
-                  vertical: 20,
-                  horizontal: 16,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: const Column(
-                  children: [
-                    Text(
-                      '今日もポジティブを',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF4A4A4A),
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                    child: const Column(
                       children: [
                         Text(
-                          '貯めていこう！',
+                          '今日もポジティブを',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                             color: Color(0xFF4A4A4A),
                           ),
                         ),
-                        Text(' 💗', style: TextStyle(fontSize: 18)),
+                        SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              '貯めていこう！',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF4A4A4A),
+                              ),
+                            ),
+                            Text(' 💗', style: TextStyle(fontSize: 18)),
+                          ],
+                        ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 30),
-              // Shake instruction
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Transform.rotate(
-                    angle: -0.2,
-                    child: const Icon(
-                      Icons.vibration_rounded,
-                      color: Color(0xFFFF5A79),
-                      size: 40,
-                    ),
                   ),
-                  const SizedBox(width: 16),
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  const SizedBox(height: 30),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
-                        'スマホをシェイクすると',
-                        style: TextStyle(
-                          fontSize: 15,
-                          color: Color(0xFF666666),
-                          fontWeight: FontWeight.w600,
+                      Transform.rotate(
+                        angle: -0.2,
+                        child: const Icon(
+                          Icons.vibration_rounded,
+                          color: Color(0xFFFF5A79),
+                          size: 40,
                         ),
                       ),
-                      SizedBox(height: 4),
-                      Text(
-                        '貯金箱のコインが揺れるよ！',
-                        style: TextStyle(
-                          fontSize: 15,
-                          color: Color(0xFF666666),
-                          fontWeight: FontWeight.w600,
-                        ),
+                      const SizedBox(width: 16),
+                      const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'スマホをシェイクすると',
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: Color(0xFF666666),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            '貯金箱のコインが揺れるよ！',
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: Color(0xFF666666),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
+                  const SizedBox(height: 40),
+                  
                 ],
               ),
-              const SizedBox(height: 40),
-                  const Icon(Icons.monetization_on, color: Colors.amber, size: 40),
-                  _isLoading
-                      ? const CircularProgressIndicator()
-                      : Text('$_coinCount', style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w900)),
-                  const Text('枚', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                ],
-              ),
-              const SizedBox(height: 30),
-              PiggyBankCard(currentCoins: _coinCount), // あやかさんの描画用カード
-            ],
+            ),
           ),
         ),
       ),
@@ -378,13 +305,37 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             child: Row(
               children: [
-                _buildSegment(TimeOfDayTheme.morning, '朝', Icons.wb_twilight, true, false),
+                _buildSegment(
+                  TimeOfDayTheme.morning,
+                  '朝',
+                  Icons.wb_twilight,
+                  true,
+                  false,
+                ),
                 _buildDivider(),
-                _buildSegment(TimeOfDayTheme.day, '昼', Icons.wb_sunny_rounded, false, false),
+                _buildSegment(
+                  TimeOfDayTheme.day,
+                  '昼',
+                  Icons.wb_sunny_rounded,
+                  false,
+                  false,
+                ),
                 _buildDivider(),
-                _buildSegment(TimeOfDayTheme.evening, '夕', Icons.wb_cloudy_outlined, false, false),
+                _buildSegment(
+                  TimeOfDayTheme.evening,
+                  '夕',
+                  Icons.wb_cloudy_outlined,
+                  false,
+                  false,
+                ),
                 _buildDivider(),
-                _buildSegment(TimeOfDayTheme.night, '夜', Icons.nightlight_round, false, true),
+                _buildSegment(
+                  TimeOfDayTheme.night,
+                  '夜',
+                  Icons.nightlight_round,
+                  false,
+                  true,
+                ),
               ],
             ),
           ),
@@ -401,7 +352,13 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildSegment(TimeOfDayTheme theme, String label, IconData icon, bool isFirst, bool isLast) {
+  Widget _buildSegment(
+    TimeOfDayTheme theme,
+    String label,
+    IconData icon,
+    bool isFirst,
+    bool isLast,
+  ) {
     final isSelected = _currentTheme == theme;
     return Expanded(
       child: GestureDetector(
@@ -419,7 +376,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     left: isFirst ? const Radius.circular(15) : Radius.zero,
                     right: isLast ? const Radius.circular(15) : Radius.zero,
                   ),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1.5),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.5),
+                    width: 1.5,
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.white.withValues(alpha: 0.1),
@@ -451,7 +411,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-
 class PiggyBankCard extends StatelessWidget {
   const PiggyBankCard({
     super.key,
@@ -459,12 +418,16 @@ class PiggyBankCard extends StatelessWidget {
     this.fallingCoin,
     this.showCollectionButton = true,
     this.theme = TimeOfDayTheme.day,
+    this.height = 400.0,
+    this.coinRecords = const [],
   });
 
   final int currentCoins;
   final Widget? fallingCoin;
   final bool showCollectionButton;
   final TimeOfDayTheme theme;
+  final double height;
+  final List<Map<String, dynamic>> coinRecords;
 
   @override
   Widget build(BuildContext context) {
@@ -474,9 +437,7 @@ class PiggyBankCard extends StatelessWidget {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (_) => const CollectionScreen(),
-          ),
+          MaterialPageRoute(builder: (_) => const CollectionScreen()),
         );
       },
       child: Container(
@@ -484,13 +445,15 @@ class PiggyBankCard extends StatelessWidget {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(32),
           child: SizedBox(
-            height: 400,
+            height: height,
             child: Stack(
               fit: StackFit.expand,
               children: [
                 // Background Landscape (Gradient, Grass, Flowers, Hearts)
                 Positioned.fill(
-                  child: CustomPaint(painter: PiggyBankBackgroundPainter(theme: theme)),
+                  child: CustomPaint(
+                    painter: PiggyBankBackgroundPainter(theme: theme),
+                  ),
                 ),
 
                 // Glass Piggy Bank UI
@@ -500,6 +463,7 @@ class PiggyBankCard extends StatelessWidget {
                     child: GlassPiggyBank(
                       currentCoins: currentCoins,
                       fallingCoin: fallingCoin,
+                      coinRecords: coinRecords,
                     ),
                   ),
                 ),
@@ -592,8 +556,8 @@ class PiggyBankBackgroundPainter extends CustomPainter {
     Color tulipColor;
     Color sparkleColor;
     Color heartColor;
-    
-    switch(theme) {
+
+    switch (theme) {
       case TimeOfDayTheme.morning:
         skyColors = [const Color(0xFFFFF7E0), const Color(0xFFFFE5C4)];
         distantHillColor = const Color(0xFFC5E1A5);
@@ -612,7 +576,10 @@ class PiggyBankBackgroundPainter extends CustomPainter {
         heartColor = const Color(0xFFF06292);
         break;
       case TimeOfDayTheme.day:
-        skyColors = [const Color(0xFFE1F5FE), const Color(0xFFFFF9C4)]; // Light blue to pale yellow
+        skyColors = [
+          const Color(0xFFE1F5FE),
+          const Color(0xFFFFF9C4),
+        ]; // Light blue to pale yellow
         distantHillColor = const Color(0xFFAED581); // Slightly more vibrant
         treeTrunkColor = const Color(0xFF8D6E63);
         treeLeafColor = const Color(0xFF81C784);
@@ -629,7 +596,10 @@ class PiggyBankBackgroundPainter extends CustomPainter {
         heartColor = const Color(0xFFEC407A);
         break;
       case TimeOfDayTheme.evening:
-        skyColors = [const Color(0xFFEF5350), const Color(0xFFFFB74D)]; // Red to orange
+        skyColors = [
+          const Color(0xFFEF5350),
+          const Color(0xFFFFB74D),
+        ]; // Red to orange
         distantHillColor = const Color(0xFF8D6E63); // Brownish
         treeTrunkColor = const Color(0xFF5D4037);
         treeLeafColor = const Color(0xFF795548);
@@ -646,7 +616,10 @@ class PiggyBankBackgroundPainter extends CustomPainter {
         heartColor = const Color(0xFFC2185B);
         break;
       case TimeOfDayTheme.night:
-        skyColors = [const Color(0xFF1A237E), const Color(0xFF3949AB)]; // Dark navy
+        skyColors = [
+          const Color(0xFF1A237E),
+          const Color(0xFF3949AB),
+        ]; // Dark navy
         distantHillColor = const Color(0xFF283593);
         treeTrunkColor = const Color(0xFF1A237E);
         treeLeafColor = const Color(0xFF303F9F);
@@ -672,8 +645,11 @@ class PiggyBankBackgroundPainter extends CustomPainter {
       stops: const [0.0, 1.0],
     );
     canvas.drawRect(
-      Rect.fromLTWH(0, 0, size.width, size.height * 0.5), 
-      Paint()..shader = skyGradient.createShader(Rect.fromLTWH(0, 0, size.width, size.height * 0.5))
+      Rect.fromLTWH(0, 0, size.width, size.height * 0.5),
+      Paint()
+        ..shader = skyGradient.createShader(
+          Rect.fromLTWH(0, 0, size.width, size.height * 0.5),
+        ),
     );
 
     // Draw Sun or Moon
@@ -720,12 +696,20 @@ class PiggyBankBackgroundPainter extends CustomPainter {
     final distantHillPaint = Paint()..color = distantHillColor;
     // Left distant hill
     canvas.drawOval(
-      Rect.fromCenter(center: Offset(size.width * 0.2, size.height * 0.45), width: size.width * 0.8, height: size.height * 0.3),
+      Rect.fromCenter(
+        center: Offset(size.width * 0.2, size.height * 0.45),
+        width: size.width * 0.8,
+        height: size.height * 0.3,
+      ),
       distantHillPaint,
     );
     // Right distant hill
     canvas.drawOval(
-      Rect.fromCenter(center: Offset(size.width * 0.8, size.height * 0.45), width: size.width * 0.8, height: size.height * 0.3),
+      Rect.fromCenter(
+        center: Offset(size.width * 0.8, size.height * 0.45),
+        width: size.width * 0.8,
+        height: size.height * 0.3,
+      ),
       distantHillPaint,
     );
 
@@ -733,15 +717,15 @@ class PiggyBankBackgroundPainter extends CustomPainter {
     void drawTree(Offset pos, double scale) {
       // Trunk
       canvas.drawRect(
-        Rect.fromCenter(center: pos + Offset(0, 15 * scale), width: 6 * scale, height: 20 * scale),
+        Rect.fromCenter(
+          center: pos + Offset(0, 15 * scale),
+          width: 6 * scale,
+          height: 20 * scale,
+        ),
         Paint()..color = treeTrunkColor,
       );
       // Leaves (round)
-      canvas.drawCircle(
-        pos,
-        18 * scale,
-        Paint()..color = treeLeafColor,
-      );
+      canvas.drawCircle(pos, 18 * scale, Paint()..color = treeLeafColor);
       // Highlight on leaves
       canvas.drawCircle(
         pos + Offset(-4 * scale, -4 * scale),
@@ -757,28 +741,30 @@ class PiggyBankBackgroundPainter extends CustomPainter {
     // 4. Main Ground (Mid-ground)
     final groundPath = Path();
     groundPath.moveTo(0, size.height * 0.45);
-    groundPath.quadraticBezierTo(size.width * 0.5, size.height * 0.4, size.width, size.height * 0.42);
+    groundPath.quadraticBezierTo(
+      size.width * 0.5,
+      size.height * 0.4,
+      size.width,
+      size.height * 0.42,
+    );
     groundPath.lineTo(size.width, size.height);
     groundPath.lineTo(0, size.height);
     groundPath.close();
-    
-    canvas.drawPath(
-      groundPath,
-      Paint()..color = groundMainColor,
-    );
-    
+
+    canvas.drawPath(groundPath, Paint()..color = groundMainColor);
+
     // Add a darker green gradient towards the bottom
     final groundGradient = LinearGradient(
       begin: Alignment.topCenter,
       end: Alignment.bottomCenter,
-      colors: [
-        groundMainColor.withValues(alpha: 0.0),
-        groundGradientColor,
-      ],
+      colors: [groundMainColor.withValues(alpha: 0.0), groundGradientColor],
     );
     canvas.drawPath(
       groundPath,
-      Paint()..shader = groundGradient.createShader(Rect.fromLTWH(0, size.height * 0.6, size.width, size.height * 0.4)),
+      Paint()
+        ..shader = groundGradient.createShader(
+          Rect.fromLTWH(0, size.height * 0.6, size.width, size.height * 0.4),
+        ),
     );
 
     // 5. Shadow under the pig
@@ -795,24 +781,58 @@ class PiggyBankBackgroundPainter extends CustomPainter {
 
     // 6. Foreground Bushes
     final bushPaint = Paint()..color = bushColor;
-    
+
     // Bottom-left bushes
-    canvas.drawCircle(Offset(size.width * 0.0, size.height * 0.95), size.width * 0.2, bushPaint);
-    canvas.drawCircle(Offset(size.width * 0.15, size.height * 1.0), size.width * 0.15, bushPaint);
-    canvas.drawCircle(Offset(size.width * 0.3, size.height * 1.05), size.width * 0.15, bushPaint);
-    
+    canvas.drawCircle(
+      Offset(size.width * 0.0, size.height * 0.95),
+      size.width * 0.2,
+      bushPaint,
+    );
+    canvas.drawCircle(
+      Offset(size.width * 0.15, size.height * 1.0),
+      size.width * 0.15,
+      bushPaint,
+    );
+    canvas.drawCircle(
+      Offset(size.width * 0.3, size.height * 1.05),
+      size.width * 0.15,
+      bushPaint,
+    );
+
     // Bottom-right bushes
-    canvas.drawCircle(Offset(size.width * 1.0, size.height * 0.92), size.width * 0.25, bushPaint);
-    canvas.drawCircle(Offset(size.width * 0.85, size.height * 1.0), size.width * 0.18, bushPaint);
-    canvas.drawCircle(Offset(size.width * 0.7, size.height * 1.05), size.width * 0.15, bushPaint);
+    canvas.drawCircle(
+      Offset(size.width * 1.0, size.height * 0.92),
+      size.width * 0.25,
+      bushPaint,
+    );
+    canvas.drawCircle(
+      Offset(size.width * 0.85, size.height * 1.0),
+      size.width * 0.18,
+      bushPaint,
+    );
+    canvas.drawCircle(
+      Offset(size.width * 0.7, size.height * 1.05),
+      size.width * 0.15,
+      bushPaint,
+    );
 
     // 7. Flowers
-    void drawFlower(Offset pos, double sizeParam, Color petalColor, {bool hasStem = false}) {
+    void drawFlower(
+      Offset pos,
+      double sizeParam,
+      Color petalColor, {
+      bool hasStem = false,
+    }) {
       if (hasStem) {
         // Draw stem
         final stemPath = Path();
         stemPath.moveTo(pos.dx, pos.dy);
-        stemPath.quadraticBezierTo(pos.dx - 5, pos.dy + 15, pos.dx + 2, pos.dy + 30);
+        stemPath.quadraticBezierTo(
+          pos.dx - 5,
+          pos.dy + 15,
+          pos.dx + 2,
+          pos.dy + 30,
+        );
         canvas.drawPath(
           stemPath,
           Paint()
@@ -822,11 +842,15 @@ class PiggyBankBackgroundPainter extends CustomPainter {
         );
         // Draw leaf
         canvas.drawOval(
-          Rect.fromCenter(center: pos + const Offset(-6, 15), width: 8, height: 4),
+          Rect.fromCenter(
+            center: pos + const Offset(-6, 15),
+            width: 8,
+            height: 4,
+          ),
           Paint()..color = distantHillColor,
         );
       }
-      
+
       final petalPaint = Paint()..color = petalColor;
       for (int i = 0; i < 5; i++) {
         final angle = (i * 2 * math.pi) / 5;
@@ -835,34 +859,73 @@ class PiggyBankBackgroundPainter extends CustomPainter {
         canvas.drawCircle(Offset(cx, cy), sizeParam * 0.5, petalPaint);
       }
       // Center
-      canvas.drawCircle(pos, sizeParam * 0.4, Paint()..color = const Color(0xFFFFCA28));
+      canvas.drawCircle(
+        pos,
+        sizeParam * 0.4,
+        Paint()..color = const Color(0xFFFFCA28),
+      );
     }
 
     // White daisies
     drawFlower(Offset(size.width * 0.15, size.height * 0.6), 6, daisyColor);
     drawFlower(Offset(size.width * 0.85, size.height * 0.5), 5, daisyColor);
     drawFlower(Offset(size.width * 0.2, size.height * 0.8), 8, daisyColor);
-    
+
     // Blue flower
-    drawFlower(Offset(size.width * 0.1, size.height * 0.7), 9, blueFlowerColor, hasStem: true);
-    
+    drawFlower(
+      Offset(size.width * 0.1, size.height * 0.7),
+      9,
+      blueFlowerColor,
+      hasStem: true,
+    );
+
     // Red flowers
-    drawFlower(Offset(size.width * 0.9, size.height * 0.58), 8, redFlowerColor, hasStem: true);
-    drawFlower(Offset(size.width * 0.92, size.height * 0.75), 9, redFlowerColor, hasStem: true);
+    drawFlower(
+      Offset(size.width * 0.9, size.height * 0.58),
+      8,
+      redFlowerColor,
+      hasStem: true,
+    );
+    drawFlower(
+      Offset(size.width * 0.92, size.height * 0.75),
+      9,
+      redFlowerColor,
+      hasStem: true,
+    );
 
     // Tulip/Orange flower
     void drawTulip(Offset pos, double scale) {
       final path = Path();
       path.moveTo(pos.dx, pos.dy + 10 * scale);
-      path.quadraticBezierTo(pos.dx - 8 * scale, pos.dy + 5 * scale, pos.dx - 6 * scale, pos.dy - 5 * scale);
-      path.quadraticBezierTo(pos.dx - 3 * scale, pos.dy, pos.dx, pos.dy - 8 * scale);
-      path.quadraticBezierTo(pos.dx + 3 * scale, pos.dy, pos.dx + 6 * scale, pos.dy - 5 * scale);
-      path.quadraticBezierTo(pos.dx + 8 * scale, pos.dy + 5 * scale, pos.dx, pos.dy + 10 * scale);
+      path.quadraticBezierTo(
+        pos.dx - 8 * scale,
+        pos.dy + 5 * scale,
+        pos.dx - 6 * scale,
+        pos.dy - 5 * scale,
+      );
+      path.quadraticBezierTo(
+        pos.dx - 3 * scale,
+        pos.dy,
+        pos.dx,
+        pos.dy - 8 * scale,
+      );
+      path.quadraticBezierTo(
+        pos.dx + 3 * scale,
+        pos.dy,
+        pos.dx + 6 * scale,
+        pos.dy - 5 * scale,
+      );
+      path.quadraticBezierTo(
+        pos.dx + 8 * scale,
+        pos.dy + 5 * scale,
+        pos.dx,
+        pos.dy + 10 * scale,
+      );
       canvas.drawPath(path, Paint()..color = tulipColor);
     }
-    
+
     drawTulip(Offset(size.width * 0.8, size.height * 0.85), 1.2);
-    
+
     // Grass blades
     void drawGrassBlade(Offset pos) {
       final path = Path();
@@ -871,7 +934,7 @@ class PiggyBankBackgroundPainter extends CustomPainter {
       path.quadraticBezierTo(pos.dx + 4, pos.dy - 6, pos.dx + 2, pos.dy);
       canvas.drawPath(path, Paint()..color = distantHillColor);
     }
-    
+
     drawGrassBlade(Offset(size.width * 0.1, size.height * 0.52));
     drawGrassBlade(Offset(size.width * 0.25, size.height * 0.55));
     drawGrassBlade(Offset(size.width * 0.8, size.height * 0.55));
@@ -881,10 +944,30 @@ class PiggyBankBackgroundPainter extends CustomPainter {
     void drawSparkle(Offset center, double sizeParam, double opacity) {
       final path = Path();
       path.moveTo(center.dx, center.dy - sizeParam);
-      path.quadraticBezierTo(center.dx, center.dy, center.dx + sizeParam, center.dy);
-      path.quadraticBezierTo(center.dx, center.dy, center.dx, center.dy + sizeParam);
-      path.quadraticBezierTo(center.dx, center.dy, center.dx - sizeParam, center.dy);
-      path.quadraticBezierTo(center.dx, center.dy, center.dx, center.dy - sizeParam);
+      path.quadraticBezierTo(
+        center.dx,
+        center.dy,
+        center.dx + sizeParam,
+        center.dy,
+      );
+      path.quadraticBezierTo(
+        center.dx,
+        center.dy,
+        center.dx,
+        center.dy + sizeParam,
+      );
+      path.quadraticBezierTo(
+        center.dx,
+        center.dy,
+        center.dx - sizeParam,
+        center.dy,
+      );
+      path.quadraticBezierTo(
+        center.dx,
+        center.dy,
+        center.dx,
+        center.dy - sizeParam,
+      );
       path.close();
 
       canvas.drawPath(
@@ -914,9 +997,23 @@ class PiggyBankBackgroundPainter extends CustomPainter {
     void drawHeart(Offset pos, double scale) {
       final path = Path();
       path.moveTo(pos.dx, pos.dy + 4 * scale);
-      path.cubicTo(pos.dx - 5 * scale, pos.dy, pos.dx - 5 * scale, pos.dy - 6 * scale, pos.dx, pos.dy - 2 * scale);
+      path.cubicTo(
+        pos.dx - 5 * scale,
+        pos.dy,
+        pos.dx - 5 * scale,
+        pos.dy - 6 * scale,
+        pos.dx,
+        pos.dy - 2 * scale,
+      );
       path.moveTo(pos.dx, pos.dy + 4 * scale);
-      path.cubicTo(pos.dx + 5 * scale, pos.dy, pos.dx + 5 * scale, pos.dy - 6 * scale, pos.dx, pos.dy - 2 * scale);
+      path.cubicTo(
+        pos.dx + 5 * scale,
+        pos.dy,
+        pos.dx + 5 * scale,
+        pos.dy - 6 * scale,
+        pos.dx,
+        pos.dy - 2 * scale,
+      );
       canvas.drawPath(
         path,
         Paint()
@@ -937,17 +1034,20 @@ class PiggyBankBackgroundPainter extends CustomPainter {
 class GlassPiggyBank extends StatefulWidget {
   final int currentCoins;
   final Widget? fallingCoin;
+  final List<Map<String, dynamic>> coinRecords;
   const GlassPiggyBank({
     super.key,
     required this.currentCoins,
     this.fallingCoin,
+    this.coinRecords = const [],
   });
 
   @override
   State<GlassPiggyBank> createState() => _GlassPiggyBankState();
 }
 
-class _GlassPiggyBankState extends State<GlassPiggyBank> with SingleTickerProviderStateMixin {
+class _GlassPiggyBankState extends State<GlassPiggyBank>
+    with SingleTickerProviderStateMixin {
   Offset _dragOffset = Offset.zero;
   Offset _sensorOffset = Offset.zero;
   Offset _mouseOffset = Offset.zero;
@@ -962,14 +1062,16 @@ class _GlassPiggyBankState extends State<GlassPiggyBank> with SingleTickerProvid
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     );
-    
+
     _springController.addListener(() {
       setState(() {
         _dragOffset = _springAnimation.value;
       });
     });
 
-    _accelerometerSubscription = accelerometerEventStream().listen((AccelerometerEvent event) {
+    _accelerometerSubscription = accelerometerEventStream().listen((
+      AccelerometerEvent event,
+    ) {
       if (!mounted) return;
       setState(() {
         // デバイスの傾きや加速度をオフセットに変換（Xは左右、Yは上下）
@@ -997,34 +1099,24 @@ class _GlassPiggyBankState extends State<GlassPiggyBank> with SingleTickerProvid
   }
 
   void _onPanEnd(DragEndDetails details) {
-    _springAnimation = Tween<Offset>(
-      begin: _dragOffset,
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _springController,
-      curve: Curves.elasticOut,
-    ));
+    _springAnimation = Tween<Offset>(begin: _dragOffset, end: Offset.zero)
+        .animate(
+          CurvedAnimation(parent: _springController, curve: Curves.elasticOut),
+        );
     _springController.forward(from: 0.0);
   }
 
   @override
   Widget build(BuildContext context) {
-    final mockCategories = [
-      {'icon': Icons.wb_sunny_rounded, 'color': const Color(0xFF64B5F6)},
-      {'icon': Icons.favorite_rounded, 'color': const Color(0xFFF06292)},
-      {'icon': Icons.home_rounded, 'color': const Color(0xFFFFB74D)},
-      {'icon': Icons.star_rounded, 'color': const Color(0xFFFFD54F)},
-      {'icon': Icons.restaurant_rounded, 'color': const Color(0xFF81C784)},
-      {'icon': Icons.music_note_rounded, 'color': const Color(0xFFBA68C8)},
-      {'icon': Icons.directions_run_rounded, 'color': const Color(0xFF4DB6AC)},
-    ];
-
     final rnd = math.Random(88);
 
     final List<Widget> coins = [];
     final int displayCoins = math.min(widget.currentCoins, 25);
 
-    final double areaSize = 350.0;
+    final double areaSize = math.min(
+      350.0,
+      MediaQuery.of(context).size.width * 0.82,
+    );
     // 豚らしい横長の楕円形（Oval）のサイズ
     final double bellyWidth = areaSize * 0.8;
     final double bellyHeight = areaSize * 0.65;
@@ -1044,7 +1136,12 @@ class _GlassPiggyBankState extends State<GlassPiggyBank> with SingleTickerProvid
           (math.sin(angle) * (bellyHeight / 2 * 0.75) * r) -
           (i * 1.5);
 
-      final category = mockCategories[rnd.nextInt(mockCategories.length)];
+      final coinRecord = widget.coinRecords.isNotEmpty
+          ? widget.coinRecords[i % widget.coinRecords.length]
+          : null;
+      final appearance = CoinStyleService.buildCoinAppearance(
+        coinType: coinRecord?['coin_type'] as String?,
+      );
       final double coinSize = 35.0 + rnd.nextDouble() * 10.0;
 
       final double angleX = (rnd.nextDouble() - 0.5) * 0.6;
@@ -1053,23 +1150,37 @@ class _GlassPiggyBankState extends State<GlassPiggyBank> with SingleTickerProvid
 
       // 物理演算（揺れ＋加速度センサー＋マウス）の適用
       final double parallax = 1.0 + (i % 4) * 0.2;
-      
+
       // ドラッグの揺れ、デバイスの傾き（センサー）、マウスホバーの傾きの全てを加算
-      final Offset coinOffset = (_dragOffset * parallax) + (_sensorOffset * (parallax * 1.2)) + (_mouseOffset * parallax);
-      
+      final Offset coinOffset =
+          (_dragOffset * parallax) +
+          (_sensorOffset * (parallax * 1.2)) +
+          (_mouseOffset * parallax);
+
       final double finalCx = cx + coinOffset.dx;
       final double finalCy = cy + coinOffset.dy;
-      
+
       // 揺れに合わせて少し回転させる
-      final double shakeRotX = angleX + (_dragOffset.dy * 0.015 * parallax) + (_sensorOffset.dy * 0.02) + (_mouseOffset.dy * 0.015);
-      final double shakeRotY = angleY + (_dragOffset.dx * 0.015 * parallax) + (_sensorOffset.dx * 0.02) + (_mouseOffset.dx * 0.015);
+      final double shakeRotX =
+          angleX +
+          (_dragOffset.dy * 0.015 * parallax) +
+          (_sensorOffset.dy * 0.02) +
+          (_mouseOffset.dy * 0.015);
+      final double shakeRotY =
+          angleY +
+          (_dragOffset.dx * 0.015 * parallax) +
+          (_sensorOffset.dx * 0.02) +
+          (_mouseOffset.dx * 0.015);
 
       coins.add(
         Positioned(
           left: finalCx - (coinSize / 2),
           top: finalCy - (coinSize / 2),
           child: Coin3D(
-            category: category,
+            category: {
+              'icon': appearance['icon'],
+              'color': appearance['color'],
+            },
             size: coinSize,
             angleX: shakeRotX,
             angleY: shakeRotY,
@@ -1102,45 +1213,45 @@ class _GlassPiggyBankState extends State<GlassPiggyBank> with SingleTickerProvid
         },
         child: GestureDetector(
           onPanUpdate: _onPanUpdate,
-        onPanEnd: _onPanEnd,
-        // ガラス全体も少しだけ揺れる
-        child: Transform.translate(
-          offset: _dragOffset * 0.2,
-          child: SizedBox(
-            width: areaSize,
-            height: areaSize,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                // 1. 背面のガラス層
-                Positioned.fill(
-                  child: CustomPaint(painter: GlassPiggyBankBackPainter()),
-                ),
-
-                // 2. コイン層（ガラスからはみ出ないように楕円でクリップ）
-                Positioned.fill(
-                  child: ClipPath(
-                    clipper: PiggyBankBellyClipper(
-                      center: Offset(bellyCenterX, bellyCenterY),
-                      width: bellyWidth * 0.9,
-                      height: bellyHeight * 0.9,
-                    ),
-                    child: Stack(clipBehavior: Clip.none, children: coins),
+          onPanEnd: _onPanEnd,
+          // ガラス全体も少しだけ揺れる
+          child: Transform.translate(
+            offset: _dragOffset * 0.2,
+            child: SizedBox(
+              width: areaSize,
+              height: areaSize,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  // 1. 背面のガラス層
+                  Positioned.fill(
+                    child: CustomPaint(painter: GlassPiggyBankBackPainter()),
                   ),
-                ),
 
-                // 落下中のコイン
-                if (widget.fallingCoin != null) widget.fallingCoin!,
+                  // 2. コイン層（ガラスからはみ出ないように楕円でクリップ）
+                  Positioned.fill(
+                    child: ClipPath(
+                      clipper: PiggyBankBellyClipper(
+                        center: Offset(bellyCenterX, bellyCenterY),
+                        width: bellyWidth * 0.9,
+                        height: bellyHeight * 0.9,
+                      ),
+                      child: Stack(clipBehavior: Clip.none, children: coins),
+                    ),
+                  ),
 
-                // 3. 前面のガラス層
-                Positioned.fill(
-                  child: CustomPaint(painter: GlassPiggyBankFrontPainter()),
-                ),
-              ],
+                  // 落下中のコイン
+                  if (widget.fallingCoin != null) widget.fallingCoin!,
+
+                  // 3. 前面のガラス層
+                  Positioned.fill(
+                    child: CustomPaint(painter: GlassPiggyBankFrontPainter()),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
-      ),
       ),
     );
   }

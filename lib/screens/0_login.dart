@@ -94,10 +94,7 @@ class _LoginScreenState extends State<LoginScreen> {
           });
         }
       } else {
-        await client.auth.signInWithPassword(
-          email: email,
-          password: password,
-        );
+        await client.auth.signInWithPassword(email: email, password: password);
       }
     } catch (e) {
       if (mounted) {
@@ -142,118 +139,137 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isCompact = screenWidth < 360;
+    final horizontalPadding = isCompact ? 20.0 : 24.0;
+    final maxWidth = screenWidth < 520 ? screenWidth : 480.0;
+
     return Scaffold(
       backgroundColor: const Color(0xFFFDF7EE),
       body: SafeArea(
         child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 40),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 24),
-                Text(
-                  _isSignUp ? '新規登録' : 'ログイン',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF333333),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'ポジティブメモを保存して、分析とコインを貯めよう。',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: Color(0xFF6B6B6B),
-                    height: 1.6,
-                  ),
-                ),
-                const SizedBox(height: 40),
-                TextField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    labelText: 'メールアドレス',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _passwordController,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'パスワード',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                if (_errorText != null || _infoText != null) ...[
-                  const SizedBox(height: 16),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: maxWidth),
+            child: SingleChildScrollView(
+              padding: EdgeInsets.symmetric(
+                horizontal: horizontalPadding,
+                vertical: isCompact ? 24 : 40,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  SizedBox(height: isCompact ? 8 : 24),
                   Text(
-                    _errorText ?? _infoText ?? '',
-                    style: TextStyle(
-                      color: _errorText != null ? Colors.redAccent : const Color(0xFF2E7D32),
-                      fontSize: 14,
-                    ),
+                    _isSignUp ? '新規登録' : 'ログイン',
                     textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: isCompact ? 28 : 32,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF333333),
+                    ),
+                  ),
+                  SizedBox(height: isCompact ? 8 : 12),
+                  Text(
+                    'ポジティブメモを保存して、分析とコインを貯めよう。',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: isCompact ? 13.5 : 15,
+                      color: const Color(0xFF6B6B6B),
+                      height: 1.6,
+                    ),
+                  ),
+                  SizedBox(height: isCompact ? 24 : 40),
+                  TextField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: const InputDecoration(
+                      labelText: 'メールアドレス',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _passwordController,
+                    obscureText: true,
+                    decoration: const InputDecoration(
+                      labelText: 'パスワード',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  if (_errorText != null || _infoText != null) ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      _errorText ?? _infoText ?? '',
+                      style: TextStyle(
+                        color: _errorText != null
+                            ? Colors.redAccent
+                            : const Color(0xFF2E7D32),
+                        fontSize: 14,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: _isLoading ? null : _submit,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFF5A79),
+                      padding: EdgeInsets.symmetric(
+                        vertical: isCompact ? 14 : 16,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : Text(
+                            _isSignUp ? '登録する' : 'ログインする',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: isCompact ? 15 : 16,
+                              color: Colors.white,
+                            ),
+                          ),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton(
+                    onPressed: _isLoading
+                        ? null
+                        : () {
+                            setState(() {
+                              _isSignUp = !_isSignUp;
+                              _errorText = null;
+                              _infoText = null;
+                            });
+                          },
+                    style: OutlinedButton.styleFrom(
+                      padding: EdgeInsets.symmetric(
+                        vertical: isCompact ? 14 : 16,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: Text(
+                      _isSignUp ? 'ログインへ' : '新規登録へ',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: isCompact ? 15 : 16,
+                      ),
+                    ),
                   ),
                 ],
-                const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _submit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF5A79),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : Text(
-                          _isSignUp ? '登録する' : 'ログインする',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: Colors.white,
-                          ),
-                        ),
-                ),
-                const SizedBox(height: 12),
-                OutlinedButton(
-                  onPressed: _isLoading
-                      ? null
-                      : () {
-                          setState(() {
-                            _isSignUp = !_isSignUp;
-                            _errorText = null;
-                            _infoText = null;
-                          });
-                        },
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: Text(
-                    _isSignUp ? 'ログインへ' : '新規登録へ',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ),

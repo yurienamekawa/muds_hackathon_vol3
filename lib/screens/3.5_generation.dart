@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import '1_home.dart';
-import '5_collection.dart'; // For Coin3D
+import '../services/coin_style_service.dart';
 
 class PiggyBankTransitionScreen extends StatefulWidget {
   final Map<String, dynamic> coinCategory;
@@ -51,10 +51,7 @@ class _PiggyBankTransitionScreenState extends State<PiggyBankTransitionScreen>
 
     // Opacity fades out once it enters the slot
     _opacityAnimation = Tween<double>(begin: 1.0, end: 0.0).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.6, 0.75),
-      ),
+      CurvedAnimation(parent: _controller, curve: const Interval(0.6, 0.75)),
     );
 
     _controller.forward();
@@ -77,6 +74,10 @@ class _PiggyBankTransitionScreenState extends State<PiggyBankTransitionScreen>
 
   @override
   Widget build(BuildContext context) {
+    final appearance = CoinStyleService.buildCoinAppearance(
+      coinType: widget.coinCategory['coin_type'] as String?,
+    );
+
     // Determine TimeOfDayTheme based on current hour
     final hour = DateTime.now().hour;
     TimeOfDayTheme theme;
@@ -131,9 +132,14 @@ class _PiggyBankTransitionScreenState extends State<PiggyBankTransitionScreen>
                             alignment: Alignment.center,
                             transform: Matrix4.identity()
                               ..setEntry(3, 2, 0.001)
-                              ..rotateY(_controller.value * math.pi * 8), // Spin rapidly while falling
+                              ..rotateY(
+                                _controller.value * math.pi * 8,
+                              ), // Spin rapidly while falling
                             child: Coin3D(
-                              category: widget.coinCategory,
+                              category: {
+                                'icon': appearance['icon'],
+                                'color': appearance['color'],
+                              },
                               size: 50,
                               angleX: 0.2,
                               angleY: 0, // Handled by Matrix4 above
