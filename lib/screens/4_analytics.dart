@@ -20,7 +20,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   static const Map<String, String> _scoreLabels = {
     'score_tsunagari': 'つながり度',
     'score_wakuwaku': 'ワクワク度',
-    'score_kansha': '感謝度',
+    'score_kotei': '自己肯定度',
     'score_tassei': '達成度',
     'score_iyashi': 'リラックス度',
   };
@@ -31,7 +31,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     _averageScores = {
       'score_tsunagari': 0.0,
       'score_wakuwaku': 0.0,
-      'score_kansha': 0.0,
+      'score_kotei': 0.0,
       'score_tassei': 0.0,
       'score_iyashi': 0.0,
     };
@@ -113,14 +113,14 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     final sums = {
       'score_tsunagari': 0.0,
       'score_wakuwaku': 0.0,
-      'score_kansha': 0.0,
+      'score_kotei': 0.0,
       'score_tassei': 0.0,
       'score_iyashi': 0.0,
     };
     final counts = {
       'score_tsunagari': 0,
       'score_wakuwaku': 0,
-      'score_kansha': 0,
+      'score_kotei': 0,
       'score_tassei': 0,
       'score_iyashi': 0,
     };
