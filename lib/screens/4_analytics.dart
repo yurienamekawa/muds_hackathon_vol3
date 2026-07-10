@@ -309,9 +309,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             const SizedBox(height: 2),
             Flexible(
               fit: FlexFit.loose,
-              child: AspectRatio(
-                aspectRatio: 1.2,
-                child: RadarChart(values: _averageScores, labels: _scoreLabels),
+              child: Container(
+                width: double.infinity,
+                alignment: Alignment.center,
+                child: AspectRatio(
+                  aspectRatio: 1.2,
+                  child: RadarChart(values: _averageScores, labels: _scoreLabels),
+                ),
               ),
             ),
             const SizedBox(height: 4),

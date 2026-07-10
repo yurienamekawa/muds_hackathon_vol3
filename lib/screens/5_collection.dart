@@ -152,32 +152,15 @@ class _CollectionScreenState extends State<CollectionScreen> {
                       horizontal: horizontalPadding,
                       vertical: 8.0,
                     ),
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final rows = (categories.length / crossAxisCount)
-                            .ceil();
-                        final width = constraints.maxWidth;
-                        final height = constraints.maxHeight;
-
-                        final itemWidth =
-                            (width - (16 * (crossAxisCount - 1))) /
-                            crossAxisCount;
-                        final itemHeight = (height - (16 * (rows - 1))) / rows;
-
-                        // Prevent division by zero or negative heights
-                        final aspectRatio = itemHeight > 0
-                            ? itemWidth / itemHeight
-                            : 1.0;
-
-                        return GridView.builder(
-                          physics: const NeverScrollableScrollPhysics(),
-                          gridDelegate:
-                              SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: crossAxisCount,
-                                mainAxisSpacing: 16,
-                                crossAxisSpacing: 16,
-                                childAspectRatio: aspectRatio,
-                              ),
+                    child: GridView.builder(
+                      physics: const BouncingScrollPhysics(),
+                      gridDelegate:
+                          SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: crossAxisCount,
+                            mainAxisSpacing: 16,
+                            crossAxisSpacing: 16,
+                            childAspectRatio: childAspectRatio,
+                          ),
                           itemCount: categories.length,
                           itemBuilder: (context, index) {
                             final category = categories[index];
@@ -277,11 +260,9 @@ class _CollectionScreenState extends State<CollectionScreen> {
                               ),
                             );
                           },
-                        );
-                      },
+                        ),
                     ),
                   ),
-                ),
                 Container(
                   width: double.infinity,
                   margin: const EdgeInsets.all(16.0),
