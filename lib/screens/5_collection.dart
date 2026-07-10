@@ -538,7 +538,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
                       separatorBuilder: (context, index) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
                         final analysis = _savedAnalyses[index];
-                        final content = analysis['content'] as String? ?? '';
+                        final content = analysis['insight'] as String? ?? '';
                         final createdAt = _formatDateTime(analysis['created_at']);
                         final id = analysis['id']?.toString() ?? UniqueKey().toString();
                         return Dismissible(
@@ -639,11 +639,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
       _savedAnalyses.removeAt(index);
     });
     try {
-      final prefs = await SharedPreferences.getInstance();
-      // 元の保存形式に戻すために再度 reverse する必要がある
-      // 現在のリストは新しい順なので、古い順にして保存する
-      final listToSave = _savedAnalyses.reversed.toList();
-      await prefs.setString('saved_self_analyses', jsonEncode(listToSave));
+      await Supabase.instance.client.from('self_analyses').delete().eq('id', id);
     } catch (e) {
       debugPrint('Delete analysis error: $e');
     }
@@ -735,12 +731,16 @@ class _CollectionScreenState extends State<CollectionScreen> {
       _isLoadingAnalyses = true;
     });
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final savedJson = prefs.getString('saved_self_analyses');
-      if (savedJson != null) {
-        final List decoded = jsonDecode(savedJson);
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      if (userId != null) {
+        final data = await Supabase.instance.client
+            .from('self_analyses')
+            .select()
+            .eq('user_id', userId)
+            .order('created_at', ascending: false);
+        
         setState(() {
-          _savedAnalyses = decoded.cast<Map<String, dynamic>>().reversed.toList();
+          _savedAnalyses = List<Map<String, dynamic>>.from(data);
         });
       }
     } catch (e) {

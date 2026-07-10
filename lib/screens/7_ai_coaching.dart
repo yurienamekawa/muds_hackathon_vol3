@@ -258,23 +258,19 @@ class _AiCoachingScreenState extends State<AiCoachingScreen> {
 
     await prefs.setString(targetKey, jsonEncode(targetDives));
 
-    // キープする場合はコレクション用にも保存
+    // キープする場合はコレクション用（DB）にも保存
     if (keep) {
-      final savedJson = prefs.getString('saved_self_analyses');
-      List<Map<String, dynamic>> savedAnalyses = [];
-      if (savedJson != null) {
-        try {
-          savedAnalyses = List<Map<String, dynamic>>.from(jsonDecode(savedJson));
-        } catch (_) {}
+      try {
+        final userId = Supabase.instance.client.auth.currentUser?.id;
+        if (userId != null) {
+          await Supabase.instance.client.from('self_analyses').insert({
+            'user_id': userId,
+            'insight': insightText,
+          });
+        }
+      } catch (e) {
+        debugPrint('DB Save Error: $e');
       }
-
-      savedAnalyses.add({
-        'id': UniqueKey().toString(),
-        'content': insightText,
-        'created_at': DateTime.now().toIso8601String(),
-      });
-
-      await prefs.setString('saved_self_analyses', jsonEncode(savedAnalyses));
     }
 
     if (mounted) {
