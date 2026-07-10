@@ -177,7 +177,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             theme: _currentTheme,
                             coinRecords: _coinRecords,
                           ),
-
+                        ),
                       ),
                       // Mindmap Button
                       Positioned(
