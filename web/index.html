@@ -31,77 +31,7 @@
 
   <title>muds_hackathon_vol3</title>
   <link rel="manifest" href="manifest.json">
-  <style>
-    #permission-overlay {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background-color: #FDF7EE;
-      z-index: 9999;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      font-family: 'Helvetica Neue', Arial, sans-serif;
-    }
-    #permission-btn {
-      padding: 16px 40px;
-      font-size: 18px;
-      font-weight: bold;
-      background-color: #FA718F;
-      color: white;
-      border: none;
-      border-radius: 30px;
-      box-shadow: 0 4px 12px rgba(250, 113, 143, 0.4);
-      cursor: pointer;
-    }
-  </style>
-  <script>
-    // iOSかどうかを判定する簡易関数
-    function isIOSDevice() {
-      return (
-        [
-          'iPad Simulator',
-          'iPhone Simulator',
-          'iPod Simulator',
-          'iPad',
-          'iPhone',
-          'iPod'
-        ].includes(navigator.platform)
-        // iPad on iOS 13 detection
-        || (navigator.userAgent.includes("Mac") && "ontouchend" in document)
-      );
-    }
 
-    document.addEventListener("DOMContentLoaded", function() {
-      // もしiOSかつ、許可リクエストの機能がある場合のみオーバーレイを作成する
-      if (isIOSDevice() && typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
-        const overlay = document.createElement('div');
-        overlay.id = 'permission-overlay';
-        
-        const title = document.createElement('h2');
-        title.style.color = '#4A4A4A';
-        title.style.marginBottom = '24px';
-        title.innerText = 'タップしてアプリを開始';
-        
-        const btn = document.createElement('button');
-        btn.id = 'permission-btn';
-        btn.innerText = 'スタート！';
-        
-        overlay.appendChild(title);
-        overlay.appendChild(btn);
-        document.body.appendChild(overlay);
-
-        btn.addEventListener('click', () => {
-          DeviceMotionEvent.requestPermission()
-            .then(permissionState => {
-              console.log('Permission state:', permissionState);
-              overlay.remove();
-            })
-            .catch(console.error);
-        });
-      }
-    });
-  </script>
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>

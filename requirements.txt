@@ -1,21 +1,36 @@
-# 技術スタックとか使用技術
+# ==========================================
+# muds_hackathon_vol3 - Tech Stack & Requirements
+# ==========================================
 
-【フロントエンド (Framework)】
-- Flutter (Dart) - クロスプラットフォームのUI構築
+# --- 1. Infrastructure & Backend ---
+Firebase Hosting (Web Deployment)
+Supabase (PostgreSQL Database, Row Level Security)
+Google Gemini API (Generative AI)
 
-【バックエンド・インフラ (BaaS)】
-- Supabase (supabase_flutter) - ユーザーデータや日記データの保存、バックエンド構築
-- Firebase Hosting - Webアプリとしてのデプロイ・ホスティング
+# --- 2. CLI Tools & Build Environment ---
+Flutter SDK (>=3.9.0 <4.0.0)
+Node.js / npm
+firebase-tools (npm package for deployment)
 
-【AI（生成AIエンジン）】
-- Google Gemini API (google_generative_ai) - ユーザーの入力テキストからポジティブな日記（コイン）を生成
+# --- 3. Flutter Core Dependencies ---
+flutter: sdk
+cupertino_icons: ^1.0.8
 
-【物理エンジン・アニメーション】
-- Flame / Forge2D (flame, flame_forge2d) - ブタの貯金箱内のコインの物理演算、重力シミュレーション
-- Sensors Plus (sensors_plus) - スマホの傾き（ジャイロセンサー）の取得と重力への反映
+# --- 4. Database & API Packages ---
+supabase_flutter: ^2.5.0
+flutter_dotenv: ^5.1.1
+google_generative_ai: ^0.4.7
+shared_preferences: ^2.5.5
 
-【UI・機能拡張パッケージ】
-- FL Chart (fl_chart) - 感情分析やコイン取得状況のグラフ化
-- Share Plus / Screenshot (share_plus, screenshot) - 画面のスクリーンショット撮影とSNS（Xなど）へのシェア機能
-- Shared Preferences (shared_preferences) - ローカルでの一時的なデータ保存
-- Flutter Dotenv (flutter_dotenv) - APIキーなどの環境変数の安全な管理
+# --- 5. UI & Animation Packages ---
+fl_chart: ^0.68.0
+rive: ^0.13.11
+flame: ^1.35.1
+flame_forge2d: ^0.19.2+4
+
+# --- 6. Device Features & Utilities ---
+sensors_plus: ^7.1.0
+screenshot: ^3.0.0
+path_provider: ^2.1.5
+share_plus: ^12.0.2
+gal: ^2.3.2
