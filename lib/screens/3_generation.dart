@@ -176,7 +176,7 @@ class _GenerationScreenState extends State<GenerationScreen>
           MaterialPageRoute(
             builder: (context) => PiggyBankTransitionScreen(
               coinCategory: _category!,
-              currentCoins: _todayCoins,
+              currentCoins: _coinRecords.length,
               coinRecords: _coinRecords,
             ),
           ),
