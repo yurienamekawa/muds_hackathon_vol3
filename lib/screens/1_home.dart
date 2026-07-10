@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flame/game.dart' hide Matrix4;
 import 'dart:math' as math;
 import 'dart:async';
 import 'dart:ui';
@@ -10,6 +11,7 @@ import '5_collection.dart';
 import '6_mindmap.dart';
 import '../widgets/animated_thought_bubble.dart';
 import '../services/coin_style_service.dart';
+import '../widgets/piggy_bank_game.dart';
 
 enum TimeOfDayTheme { morning, day, evening, night }
 
@@ -766,6 +768,7 @@ class _GlassPiggyBankState extends State<GlassPiggyBank>
   late final AnimationController _springController;
   late Animation<Offset> _springAnimation;
   StreamSubscription<AccelerometerEvent>? _accelerometerSubscription;
+  PiggyBankGame? _game;
 
   @override
   void initState() {
@@ -788,7 +791,7 @@ class _GlassPiggyBankState extends State<GlassPiggyBank>
       setState(() {
         // デバイスの傾きや加速度をオフセットに変換（Xは左右、Yは上下）
         // 画面の向きに合わせてX軸は反転させることで、重力に従って動く感覚を出す
-        _sensorOffset = Offset(-event.x * 2.5, (event.y - 9.8) * 2.5);
+        _sensorOffset = Offset(-event.x * 2.5, (event.y) * 2.5);
       });
     });
   }
@@ -822,7 +825,6 @@ class _GlassPiggyBankState extends State<GlassPiggyBank>
   Widget build(BuildContext context) {
     final rnd = math.Random(88);
 
-    final List<Widget> coins = [];
     final int displayCoins = math.min(widget.currentCoins, 25);
 
     final double areaSize = math.min(
@@ -834,79 +836,6 @@ class _GlassPiggyBankState extends State<GlassPiggyBank>
     final double bellyHeight = areaSize * 0.85;
     final double bellyCenterX = areaSize * 0.5;
     final double bellyCenterY = areaSize * 0.5;
-
-    for (int i = 0; i < displayCoins; i++) {
-      // 楕円の下半分にコインを配置
-      final double angle = rnd.nextDouble() * math.pi;
-      final double r = math.sqrt(rnd.nextDouble());
-
-      final double cx =
-          bellyCenterX + math.cos(angle) * (bellyWidth / 2 * 0.85) * r;
-      final double cy =
-          bellyCenterY +
-          (bellyHeight * 0.1) +
-          (math.sin(angle) * (bellyHeight / 2 * 0.75) * r) -
-          (i * 1.5);
-
-      final coinRecord = widget.coinRecords.isNotEmpty
-          ? widget.coinRecords[i % widget.coinRecords.length]
-          : null;
-      final appearance = CoinStyleService.buildCoinAppearance(
-        coinType: coinRecord?['coin_type'] as String?,
-      );
-      final double coinSize = 35.0 + rnd.nextDouble() * 10.0;
-
-      final double angleX = (rnd.nextDouble() - 0.5) * 0.6;
-      final double angleY = (rnd.nextDouble() - 0.5) * 0.6;
-      final double angleZ = rnd.nextDouble() * 2 * math.pi;
-
-      // 物理演算（揺れ＋加速度センサー＋マウス）の適用
-      final double parallax = 1.0 + (i % 4) * 0.2;
-
-      // ドラッグの揺れ、デバイスの傾き（センサー）、マウスホバーの傾きの全てを加算
-      final Offset coinOffset =
-          (_dragOffset * parallax) +
-          (_sensorOffset * (parallax * 1.2)) +
-          (_mouseOffset * parallax);
-
-      final double finalCx = cx + coinOffset.dx;
-      final double finalCy = cy + coinOffset.dy;
-
-      // 揺れに合わせて少し回転させる
-      final double shakeRotX =
-          angleX +
-          (_dragOffset.dy * 0.015 * parallax) +
-          (_sensorOffset.dy * 0.02) +
-          (_mouseOffset.dy * 0.015);
-      final double shakeRotY =
-          angleY +
-          (_dragOffset.dx * 0.015 * parallax) +
-          (_sensorOffset.dx * 0.02) +
-          (_mouseOffset.dx * 0.015);
-
-      coins.add(
-        Positioned(
-          left: finalCx - (coinSize / 2),
-          top: finalCy - (coinSize / 2),
-          child: Coin3D(
-            category: {
-              'icon': appearance['icon'],
-              'color': appearance['color'],
-            },
-            size: coinSize,
-            angleX: shakeRotX,
-            angleY: shakeRotY,
-            angleZ: angleZ,
-          ),
-        ),
-      );
-    }
-
-    coins.sort((a, b) {
-      final posA = a as Positioned;
-      final posB = b as Positioned;
-      return posA.top!.compareTo(posB.top!);
-    });
 
     return Center(
       child: MouseRegion(
@@ -938,14 +867,31 @@ class _GlassPiggyBankState extends State<GlassPiggyBank>
 
 
                   // 2. コイン層（画像のお腹の形に合わせてクリップ）
+                  // Flame Forge2D GameWidgetを使用
                   Positioned.fill(
                     child: ClipPath(
                       clipper: PiggyBankBellyClipper(
-                        center: Offset(bellyCenterX, bellyCenterY + areaSize * 0.05),
-                        width: bellyWidth * 0.85,
-                        height: bellyHeight * 0.8,
+                        center: Offset(bellyCenterX + areaSize * 0.038, bellyCenterY - areaSize * 0.02),
+                        width: areaSize * 0.82,
+                        height: areaSize * 0.78,
                       ),
-                      child: Stack(clipBehavior: Clip.none, children: coins),
+                      child: Stack(
+                        children: [
+                          Builder(
+                            builder: (context) {
+                              if (_game == null || _game!.initialCoinCount != displayCoins) {
+                                _game = PiggyBankGame(
+                                  initialCoinCount: displayCoins,
+                                  coinRecords: widget.coinRecords,
+                                  bellyWidth: areaSize * 0.82,
+                                  bellyHeight: areaSize * 0.78,
+                                );
+                          }
+                          return GameWidget(game: _game!);
+                            }
+                          ),
+                        ],
+                      ),
                     ),
                   ),
 
