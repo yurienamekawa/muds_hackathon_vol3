@@ -1,22 +1,18 @@
 import 'dart:math' as math;
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:screenshot/screenshot.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:gal/gal.dart';
 import '7_ai_coaching.dart';
 
 class MindmapNode {
   final String id;
   final String label;
-  final String type; // 'root', 'time', 'record', 'deep_dive'
+  final String type; // 'root', 'time', 'record', 'deep_dive', 'ai_insight'
   Offset position;
   final List<MindmapNode> children;
   bool isExpanded;
+  final List<dynamic>? chatHistory;
 
   MindmapNode({
     required this.id,
@@ -25,6 +21,7 @@ class MindmapNode {
     this.position = Offset.zero,
     List<MindmapNode>? children,
     this.isExpanded = true,
+    this.chatHistory,
   }) : children = children ?? [];
 
   Map<String, dynamic> toJson() {
@@ -34,6 +31,7 @@ class MindmapNode {
       'type': type,
       'isExpanded': isExpanded,
       'children': children.map((c) => c.toJson()).toList(),
+      if (chatHistory != null) 'chat_history': chatHistory,
     };
   }
 
@@ -43,6 +41,7 @@ class MindmapNode {
       label: json['label'] as String,
       type: json['type'] as String,
       isExpanded: json['isExpanded'] as bool? ?? true,
+      chatHistory: json['chat_history'] as List<dynamic>?,
       children: (json['children'] as List?)
               ?.map((c) => MindmapNode.fromJson(c as Map<String, dynamic>))
               .toList() ??
@@ -62,7 +61,6 @@ class _MindmapScreenState extends State<MindmapScreen> {
   bool _isLoading = true;
   MindmapNode? _rootNode;
   final TransformationController _transformationController = TransformationController();
-  final ScreenshotController _screenshotController = ScreenshotController();
 
   @override
   void initState() {
@@ -201,10 +199,17 @@ class _MindmapScreenState extends State<MindmapScreen> {
       for (int i = 0; i < n; i++) {
         final child = children[i];
         final childAngle = startAngle + step * (i + 1);
-        child.position = center + Offset(radius * math.cos(childAngle), radius * math.sin(childAngle));
         
-        // 深掘りの深掘りにも対応するため再帰的に計算（広がる角度を少しずつ狭める）
-        calculateChildren(child, radius + 150.0, childAngle, spread * 0.7);
+        // 箱が被らないように、奇数番目の要素は半径を少し遠くする（ジグザグ配置）
+        double currentRadius = radius;
+        if (child.type == 'ai_insight' || child.type == 'deep_dive') {
+          currentRadius += (i % 2 != 0) ? 100.0 : 0.0;
+        }
+
+        child.position = center + Offset(currentRadius * math.cos(childAngle), currentRadius * math.sin(childAngle));
+        
+        // 深掘りの深掘りにも対応するため再帰的に計算。広がる角度を少しずつ狭める
+        calculateChildren(child, currentRadius + 180.0, childAngle, spread * 0.8);
       }
     }
 
@@ -214,7 +219,7 @@ class _MindmapScreenState extends State<MindmapScreen> {
       if (child.type == 'time') {
         final baseAngle = timeAngles[child.label] ?? 0.0;
         child.position = center + Offset(150.0 * math.cos(baseAngle), 150.0 * math.sin(baseAngle));
-        calculateChildren(child, 300.0, baseAngle, math.pi / 1.5);
+        calculateChildren(child, 330.0, baseAngle, math.pi / 1.5);
       }
     }
 
@@ -230,67 +235,77 @@ class _MindmapScreenState extends State<MindmapScreen> {
   }
 
   void _onNodeTap(MindmapNode node) {
-    if (node.type == 'record' || node.type == 'deep_dive') {
-      _showDeepDiveDialog(node);
-    } else if (node.type == 'time' || node.type == 'root') {
+    if (node.type == 'time' || node.type == 'root') {
       setState(() {
         node.isExpanded = !node.isExpanded;
         if (_rootNode != null) _calculateLayout(_rootNode!);
       });
       // 開閉状態も保存しておく
       _saveAllDeepDives();
+    } else if (node.type == 'ai_insight' && node.chatHistory != null && node.chatHistory!.isNotEmpty) {
+      _showChatHistoryDialog(node);
     }
   }
 
-  Future<void> _showDeepDiveDialog(MindmapNode parentNode) async {
-    final controller = TextEditingController();
-    final result = await showDialog<String>(
+  void _showChatHistoryDialog(MindmapNode node) {
+    showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-          title: const Text('深掘りしてみよう', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          content: TextField(
-            controller: controller,
-            decoration: InputDecoration(
-              hintText: '例: なぜ？どうして？',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('AIとの対話履歴', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.separated(
+              shrinkWrap: true,
+              itemCount: node.chatHistory!.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                final message = node.chatHistory![index] as Map<String, dynamic>;
+                final isUser = message['role'] == 'user';
+                if (isUser && index == 0) return const SizedBox.shrink(); // Hide initial prompt
+                return Align(
+                  alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: isUser ? const Color(0xFFFA718F) : Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: isUser
+                          ? []
+                          : [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.05),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                    ),
+                    child: Text(
+                      message['content']?.toString() ?? '',
+                      style: TextStyle(
+                        fontSize: 14,
+                        height: 1.5,
+                        color: isUser ? Colors.white : const Color(0xFF4A4A4A),
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
-            maxLines: 2,
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('キャンセル', style: TextStyle(color: Colors.grey)),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context, controller.text),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFA718F),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              ),
-              child: const Text('追加する', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              child: const Text('閉じる', style: TextStyle(color: Colors.grey)),
             ),
           ],
         );
       },
     );
-
-    if (result != null && result.trim().isNotEmpty) {
-      setState(() {
-        final newNode = MindmapNode(
-          id: UniqueKey().toString(),
-          label: result.trim(),
-          type: 'deep_dive',
-        );
-        parentNode.children.add(newNode);
-        parentNode.isExpanded = true;
-        if (_rootNode != null) _calculateLayout(_rootNode!);
-      });
-      // データ全体を保存
-      _saveAllDeepDives();
-    }
   }
+
+
 
   Future<void> _saveAllDeepDives() async {
     if (_rootNode == null) return;
@@ -316,99 +331,6 @@ class _MindmapScreenState extends State<MindmapScreen> {
       await prefs.remove(k);
     }
     await _loadData();
-  }
-
-  Future<void> _saveToGallery() async {
-    try {
-      if (_rootNode == null) return;
-
-      // 1. 全ノードの座標から、描画されている範囲（バウンディングボックス）を計算する
-      double minX = double.infinity;
-      double maxX = double.negativeInfinity;
-      double minY = double.infinity;
-      double maxY = double.negativeInfinity;
-
-      void traverse(MindmapNode n) {
-        if (n.position.dx < minX) minX = n.position.dx;
-        if (n.position.dx > maxX) maxX = n.position.dx;
-        if (n.position.dy < minY) minY = n.position.dy;
-        if (n.position.dy > maxY) maxY = n.position.dy;
-        if (n.isExpanded) {
-          for (final c in n.children) traverse(c);
-        }
-      }
-      traverse(_rootNode!);
-
-      // 余白（パディング）を追加
-      minX -= 120;
-      maxX += 120;
-      minY -= 120;
-      maxY += 120;
-
-      final captureWidth = maxX - minX;
-      final captureHeight = maxY - minY;
-      final shiftOffset = Offset(-minX, -minY);
-
-      // captureFromWidgetが正しくテキストなどを描画できるように、MaterialとDirectionalityを追加
-      final fullMapWidget = Directionality(
-        textDirection: TextDirection.ltr,
-        child: Material(
-          color: Colors.transparent,
-          child: Container(
-            width: captureWidth,
-            height: captureHeight,
-            color: const Color(0xFFFDF7EE),
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                CustomPaint(
-                  size: Size(captureWidth, captureHeight),
-                  painter: MindmapEdgePainter(_rootNode!, offset: shiftOffset),
-                ),
-                ..._buildNodeWidgets(_rootNode!, offset: shiftOffset),
-              ],
-            ),
-          ),
-        ),
-      );
-
-      final image = await _screenshotController.captureFromWidget(
-        fullMapWidget,
-        delay: const Duration(milliseconds: 200),
-        pixelRatio: 2.0, // 範囲が狭くなったので高画質化
-        context: context,
-        targetSize: Size(captureWidth, captureHeight),
-      );
-
-      if (image.isNotEmpty) {
-        final directory = await getTemporaryDirectory();
-        final imagePath = await File('${directory.path}/mindmap.png').create();
-        await imagePath.writeAsBytes(image);
-        
-        // galパッケージを使って写真アプリ（カメラロール）に直接保存
-        await Gal.putImage(imagePath.path);
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('写真アプリに保存しました！📸', style: TextStyle(fontWeight: FontWeight.bold)),
-              backgroundColor: Color(0xFFFA718F),
-              duration: Duration(seconds: 3),
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      debugPrint('Screenshot error: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('画像の保存に失敗しました。', style: TextStyle(color: Colors.white)),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
   }
 
   @override
@@ -492,15 +414,6 @@ class _MindmapScreenState extends State<MindmapScreen> {
                   elevation: 4,
                   icon: const Text('✨', style: TextStyle(fontSize: 18)),
                   label: const Text('AI分析ルームへ', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                ),
-                const SizedBox(height: 16),
-                FloatingActionButton.extended(
-                  heroTag: 'save_btn',
-                  onPressed: _saveToGallery,
-                  backgroundColor: const Color(0xFFFA718F),
-                  elevation: 4,
-                  icon: const Icon(Icons.download, color: Colors.white),
-                  label: const Text('写真に保存', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
@@ -588,19 +501,6 @@ class _MindmapScreenState extends State<MindmapScreen> {
               textAlign: TextAlign.center,
               style: TextStyle(color: textColor, fontSize: fontSize, fontWeight: node.type != 'record' ? FontWeight.bold : FontWeight.normal, height: 1.4),
             ),
-            if (node.type == 'record' || node.type == 'deep_dive')
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.add_circle, color: const Color(0xFFFA718F).withOpacity(0.7), size: 14),
-                    const SizedBox(width: 4),
-                    Text('深掘り', style: TextStyle(color: const Color(0xFFFA718F).withOpacity(0.8), fontSize: 10)),
-                  ],
-                ),
-              ),
           ],
         ),
       ),
