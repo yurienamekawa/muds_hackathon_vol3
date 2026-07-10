@@ -5,6 +5,8 @@ import '../services/ai_service.dart';
 import '../services/db_service.dart';
 import '3_generation.dart';
 
+import '2.5_venting.dart';
+
 class InputScreen extends StatefulWidget {
   const InputScreen({
     super.key,
@@ -166,6 +168,42 @@ class _InputScreenState extends State<InputScreen> {
                                   color: Color(0xFFAFAFAF),
                                   fontSize: 13,
                                   fontFamily: 'serif',
+                                ),
+                              ),
+                            ),
+                            // 非常ボタン（愚痴ボタン） at bottom right
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: Tooltip(
+                                message: '誰にも言えない愚痴を吐き出す',
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(20),
+                                  onTap: () {
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (context) => VentingScreen(
+                                          onVented: () {
+                                            Navigator.of(context).pop(); // VentingScreenを閉じる
+                                            widget.onBack(); // RootScreenのタブをホーム(0)に戻す
+                                          },
+                                        ),
+                                        fullscreenDialog: true,
+                                      ),
+                                    );
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.redAccent.withValues(alpha: 0.1),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.warning_amber_rounded,
+                                      color: Colors.redAccent,
+                                      size: 24,
+                                    ),
+                                  ),
                                 ),
                               ),
                             ),
