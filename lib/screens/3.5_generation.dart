@@ -12,7 +12,7 @@ class PiggyBankTransitionScreen extends StatefulWidget {
     super.key,
     required this.coinCategory,
     required this.currentCoins,
-    this.coinRecords = const [],
+    required this.coinRecords,
   });
 
   @override

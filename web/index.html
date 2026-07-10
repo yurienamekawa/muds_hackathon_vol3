@@ -31,6 +31,23 @@
 
   <title>muds_hackathon_vol3</title>
   <link rel="manifest" href="manifest.json">
+  <script>
+    function requestMotionPermission() {
+      if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+        DeviceMotionEvent.requestPermission()
+          .then(permissionState => {
+            if (permissionState === 'granted') {
+              console.log('Device motion permission granted.');
+            }
+          })
+          .catch(console.error);
+      }
+      window.removeEventListener('click', requestMotionPermission);
+      window.removeEventListener('touchstart', requestMotionPermission);
+    }
+    window.addEventListener('click', requestMotionPermission);
+    window.addEventListener('touchstart', requestMotionPermission);
+  </script>
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>
