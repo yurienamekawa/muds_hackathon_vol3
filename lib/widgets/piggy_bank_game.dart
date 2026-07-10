@@ -58,10 +58,25 @@ class PiggyBankGame extends Forge2DGame {
     });
   }
 
+  Vector2 _dragGravity = Vector2.zero();
+
+  void updateDragGravity(Offset offset) {
+    // スワイプの勢いを重力に変換
+    _dragGravity = Vector2(offset.dx * 5.0, offset.dy * 5.0);
+  }
+
   @override
   void update(double dt) {
     super.update(dt);
-    world.gravity = _currentGravity;
+    // センサーの重力（通常） ＋ スワイプの重力（疑似的な傾き）
+    world.gravity = _currentGravity + _dragGravity;
+    
+    // スワイプ重力を徐々に元に戻す（減衰）
+    if (_dragGravity.length > 0.1) {
+      _dragGravity.scale(0.9);
+    } else {
+      _dragGravity.setZero();
+    }
   }
 
   @override

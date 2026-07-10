@@ -811,6 +811,8 @@ class _GlassPiggyBankState extends State<GlassPiggyBank>
         _dragOffset = (_dragOffset / _dragOffset.distance) * maxDrag;
       }
     });
+    // 物理エンジン（Flame）にスワイプの勢いを渡してコインを揺らす
+    _game?.updateDragGravity(details.delta);
   }
 
   void _onPanEnd(DragEndDetails details) {
@@ -846,6 +848,8 @@ class _GlassPiggyBankState extends State<GlassPiggyBank>
             final double dy = event.localPosition.dy - (areaSize / 2);
             _mouseOffset = Offset(dx * 0.15, dy * 0.15);
           });
+          // 物理エンジン（Flame）にマウスの勢いを少しだけ渡す
+          _game?.updateDragGravity(event.delta * 2.0);
         },
         onExit: (event) {
           setState(() {
