@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/coin_style_service.dart';
 
 class CollectionScreen extends StatefulWidget {
@@ -15,6 +17,9 @@ class _CollectionScreenState extends State<CollectionScreen> {
   List<Map<String, dynamic>> _footprintRecords = [];
   Set<String> _unlockedCategories = {};
   Map<String, Map<String, dynamic>> _latestAcquiredByCategory = {};
+
+  bool _isLoadingAnalyses = true;
+  List<Map<String, dynamic>> _savedAnalyses = [];
 
   final List<Map<String, dynamic>> categories = [
     {
@@ -97,6 +102,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
   void initState() {
     super.initState();
     _loadFootprints();
+    _loadAnalyses();
   }
 
   @override
@@ -121,7 +127,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
     final selectedRecord = _latestAcquiredByCategory[selectedCategory['id']];
 
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         backgroundColor: const Color(0xFFFDF7EE),
         appBar: AppBar(
@@ -139,6 +145,7 @@ class _CollectionScreenState extends State<CollectionScreen> {
             tabs: [
               Tab(text: 'コレクション'),
               Tab(text: 'あしあと'),
+              Tab(text: '自己分析'),
             ],
           ),
         ),
@@ -501,10 +508,145 @@ class _CollectionScreenState extends State<CollectionScreen> {
                       },
                     ),
             ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+              child: _isLoadingAnalyses
+                  ? const Center(child: CircularProgressIndicator())
+                  : _savedAnalyses.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(Icons.auto_awesome, size: 72, color: Color(0xFFFF5A79)),
+                          SizedBox(height: 16),
+                          Text(
+                            '自己分析はまだありません。',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF4A4A4A)),
+                          ),
+                          SizedBox(height: 12),
+                          Text(
+                            'AI分析ルームで対話をして、自己分析をキープしてみましょう。',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 14, color: Color(0xFF6B6B6B)),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.separated(
+                      itemCount: _savedAnalyses.length,
+                      separatorBuilder: (context, index) => const SizedBox(height: 12),
+                      itemBuilder: (context, index) {
+                        final analysis = _savedAnalyses[index];
+                        final content = analysis['content'] as String? ?? '';
+                        final createdAt = _formatDateTime(analysis['created_at']);
+                        final id = analysis['id']?.toString() ?? UniqueKey().toString();
+                        return Dismissible(
+                          key: Key(id),
+                          direction: DismissDirection.endToStart,
+                          background: Container(
+                            alignment: Alignment.centerRight,
+                            padding: const EdgeInsets.only(right: 20.0),
+                            decoration: BoxDecoration(
+                              color: Colors.redAccent,
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                            child: const Icon(Icons.delete, color: Colors.white),
+                          ),
+                          confirmDismiss: (direction) async {
+                            return await showDialog<bool>(
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog(
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                                  title: const Text('確認', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  content: const Text('この自己分析を削除してよろしいですか？'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context, false),
+                                      child: const Text('キャンセル', style: TextStyle(color: Colors.grey)),
+                                    ),
+                                    ElevatedButton(
+                                      onPressed: () => Navigator.pop(context, true),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.redAccent,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                      ),
+                                      child: const Text('削除する', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          },
+                          onDismissed: (direction) {
+                            _deleteAnalysis(index, id);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('自己分析を削除しました'),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(18),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.04),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 5),
+                                ),
+                              ],
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Row(
+                                    children: [
+                                      const Icon(Icons.star, size: 14, color: Color(0xFFFFD54F)),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        createdAt,
+                                        style: const TextStyle(fontSize: 12, color: Color(0xFF8A8A8A)),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    content,
+                                    style: const TextStyle(fontSize: 15, color: Color(0xFF333333), height: 1.5),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _deleteAnalysis(int index, String id) async {
+    setState(() {
+      _savedAnalyses.removeAt(index);
+    });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      // 元の保存形式に戻すために再度 reverse する必要がある
+      // 現在のリストは新しい順なので、古い順にして保存する
+      final listToSave = _savedAnalyses.reversed.toList();
+      await prefs.setString('saved_self_analyses', jsonEncode(listToSave));
+    } catch (e) {
+      debugPrint('Delete analysis error: $e');
+    }
   }
 
   Future<void> _loadFootprints() async {
@@ -583,6 +725,30 @@ class _CollectionScreenState extends State<CollectionScreen> {
       if (mounted) {
         setState(() {
           _isLoadingFootprints = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _loadAnalyses() async {
+    setState(() {
+      _isLoadingAnalyses = true;
+    });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedJson = prefs.getString('saved_self_analyses');
+      if (savedJson != null) {
+        final List decoded = jsonDecode(savedJson);
+        setState(() {
+          _savedAnalyses = decoded.cast<Map<String, dynamic>>().reversed.toList();
+        });
+      }
+    } catch (e) {
+      debugPrint('Analyses load error: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingAnalyses = false;
         });
       }
     }

@@ -18,6 +18,8 @@ class _AiCoachingScreenState extends State<AiCoachingScreen> {
   
   bool _isLoading = true;
   String _mindmapDataText = "";
+  int _turnCount = 0;
+  bool _isChatEnded = false;
 
   @override
   void initState() {
@@ -75,7 +77,7 @@ class _AiCoachingScreenState extends State<AiCoachingScreen> {
           for (final record in timeRecords) {
             final title = record['memo']?.toString() ?? record['note']?.toString() ?? '無題';
             final id = record['id']?.toString() ?? '';
-            dataText += "  - 出来事: $title\n";
+            dataText += "  - 出来事(ID: $id): $title\n";
             
             String fetchDives(String parentId, int depth) {
               String res = "";
@@ -123,7 +125,7 @@ class _AiCoachingScreenState extends State<AiCoachingScreen> {
       setState(() {
         _messages.add({
           'role': 'model',
-          'content': 'ごめんね、エラーが起きちゃったブヒ…通信環境を確認してもう一度試してほしいブヒ！',
+          'content': 'ごめんなさい、エラーが発生してしまいました…。通信環境を確認して、もう一度試してみてください！',
         });
       });
     } finally {
@@ -134,18 +136,24 @@ class _AiCoachingScreenState extends State<AiCoachingScreen> {
   }
 
   void _handleSubmitted(String text) {
-    if (text.trim().isEmpty) return;
+    if (text.trim().isEmpty || _isChatEnded) return;
     
     setState(() {
       _messages.add({
         'role': 'user',
         'content': text.trim(),
       });
+      _turnCount++;
     });
     
     _textController.clear();
     _scrollToBottom();
-    _sendMessageToAi();
+    
+    if (_turnCount >= 3) {
+      _summarizeAndEnd();
+    } else {
+      _sendMessageToAi();
+    }
   }
 
   void _scrollToBottom() {
@@ -163,36 +171,122 @@ class _AiCoachingScreenState extends State<AiCoachingScreen> {
   Future<void> _summarizeAndEnd() async {
     setState(() {
       _isLoading = true;
+      _isChatEnded = true;
     });
 
-    final insightText = await AiService.summarizeChatToNodes(_messages);
+    try {
+      final result = await AiService.summarizeChatToNodes(_messages, _mindmapDataText);
+      final insightText = result['insight']?.toString() ?? '自己分析の新たな気づき';
+      final recordId = result['record_id']?.toString() ?? '';
 
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        _showSelfAnalysisResult(insightText, recordId);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _isChatEnded = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('エラーが発生しました。もう一度お試しください。')),
+        );
+      }
+    }
+  }
+
+  void _showSelfAnalysisResult(String insightText, String recordId) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (c) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: const Text('🌟 あなたの自己分析', style: TextStyle(fontWeight: FontWeight.bold)),
+          content: SingleChildScrollView(
+            child: Text(insightText, style: const TextStyle(fontSize: 15, height: 1.5)),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(c);
+                await _saveAnalysis(insightText, recordId, keep: false);
+              },
+              child: const Text('閉じる', style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(c);
+                await _saveAnalysis(insightText, recordId, keep: true);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFA718F),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+              child: const Text('キープする', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _saveAnalysis(String insightText, String recordId, {required bool keep}) async {
     final prefs = await SharedPreferences.getInstance();
-    final existingJson = prefs.getString('deep_dives_root');
-    List<Map<String, dynamic>> rootDives = [];
+    
+    // マインドマップへの気づきとして保存
+    final targetKey = recordId.isNotEmpty ? 'deep_dives_$recordId' : 'deep_dives_root';
+    final existingJson = prefs.getString(targetKey);
+    List<Map<String, dynamic>> targetDives = [];
     if (existingJson != null) {
       try {
-        rootDives = List<Map<String, dynamic>>.from(jsonDecode(existingJson));
+        targetDives = List<Map<String, dynamic>>.from(jsonDecode(existingJson));
       } catch (_) {}
     }
     
-    rootDives.add({
+    targetDives.add({
       'id': UniqueKey().toString(),
       'label': insightText,
       'type': 'ai_insight',
       'isExpanded': true,
       'children': [],
+      'chat_history': _messages,
     });
 
-    await prefs.setString('deep_dives_root', jsonEncode(rootDives));
+    await prefs.setString(targetKey, jsonEncode(targetDives));
+
+    // キープする場合はコレクション用にも保存
+    if (keep) {
+      final savedJson = prefs.getString('saved_self_analyses');
+      List<Map<String, dynamic>> savedAnalyses = [];
+      if (savedJson != null) {
+        try {
+          savedAnalyses = List<Map<String, dynamic>>.from(jsonDecode(savedJson));
+        } catch (_) {}
+      }
+
+      savedAnalyses.add({
+        'id': UniqueKey().toString(),
+        'content': insightText,
+        'created_at': DateTime.now().toIso8601String(),
+      });
+
+      await prefs.setString('saved_self_analyses', jsonEncode(savedAnalyses));
+    }
 
     if (mounted) {
       Navigator.pop(context); // チャット画面を閉じる
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('マップの中心に「AIからの気づき」を追加しました！✨', style: TextStyle(fontWeight: FontWeight.bold)),
-          backgroundColor: Color(0xFFFA718F),
-          duration: Duration(seconds: 4),
+        SnackBar(
+          content: Text(
+            keep ? '自己分析をコレクションに保存しました！✨' : 'マップの中心に「AIからの気づき」を追加しました！✨',
+            style: const TextStyle(fontWeight: FontWeight.bold)
+          ),
+          backgroundColor: const Color(0xFFFA718F),
+          duration: const Duration(seconds: 4),
         ),
       );
     }
@@ -211,7 +305,7 @@ class _AiCoachingScreenState extends State<AiCoachingScreen> {
         foregroundColor: Colors.white,
         actions: [
           TextButton.icon(
-            onPressed: (_isLoading || displayMessages.length < 2) ? null : _summarizeAndEnd,
+            onPressed: (_isLoading || _isChatEnded || displayMessages.length < 2) ? null : _summarizeAndEnd,
             icon: const Icon(Icons.check_circle, color: Colors.white, size: 18),
             label: const Text('追加して終了', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
           ),
@@ -242,12 +336,12 @@ class _AiCoachingScreenState extends State<AiCoachingScreen> {
                     },
                   ),
           ),
-          if (_isLoading && displayMessages.isNotEmpty)
+          if (_isLoading && displayMessages.isNotEmpty && !_isChatEnded)
             const Padding(
               padding: EdgeInsets.all(8.0),
               child: CircularProgressIndicator(color: Color(0xFFFA718F)),
             ),
-          _buildTextComposer(),
+          if (!_isChatEnded) _buildTextComposer(),
         ],
       ),
     );
