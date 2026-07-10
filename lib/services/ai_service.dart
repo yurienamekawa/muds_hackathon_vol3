@@ -61,4 +61,74 @@ class AiService {
 メモ: "$userMemo"
 ''';
   }
+
+  /// AIコーチング（自己分析チャット）用の関数
+  static Future<String> chatCoaching(List<Map<String, String>> messages, String mindmapData) async {
+    final apiKey = dotenv.env['GEMINI_API_KEY'];
+    if (apiKey == null) {
+      throw Exception('APIキーが見つかりません。');
+    }
+
+    // システムインストラクション（役割定義）を設定
+    final model = GenerativeModel(
+      model: _modelName, 
+      apiKey: apiKey,
+      systemInstruction: Content.system('''
+あなたはユーザーの自己分析をサポートする優しいコーチ（ブタの貯金箱のキャラクター「ハピブー」）です。
+以下のマインドマップデータをもとに、ユーザーの幸せの傾向を分析し、対話を通して深掘りを手伝ってください。
+親しみやすい言葉遣いを使用し、絵文字をたくさん使ってください。
+
+【重要ルール】
+・スマートフォンで読みやすいように、1回の返信は最大でも150文字〜200文字程度と「非常に短く、簡潔に」してください。
+・長文の解説や箇条書きの羅列は避け、チャットらしい短いキャッチボールを心がけてください。
+・毎回、最後に自己分析を深める「問い」を1つだけ投げかけてください。
+
+【ユーザーの幸せマインドマップデータ（時間帯 -> 出来事 -> なぜ幸せに感じたか）】
+$mindmapData
+'''),
+    );
+
+    // 履歴メッセージをContentオブジェクトに変換
+    final contents = messages.map((m) {
+      return Content(m['role'] == 'user' ? 'user' : 'model', [TextPart(m['content']!)]);
+    }).toList();
+
+    try {
+      final response = await model.generateContent(contents);
+      return response.text?.trim() ?? '';
+    } catch (e) {
+      print('Gemini Chat Error: $e');
+      rethrow;
+    }
+  }
+
+  /// チャット履歴から「マインドマップに追加する気づき」を抽出する関数
+  static Future<String> summarizeChatToNodes(List<Map<String, String>> messages) async {
+    final apiKey = dotenv.env['GEMINI_API_KEY'];
+    if (apiKey == null) throw Exception('APIキーが見つかりません。');
+
+    final model = GenerativeModel(
+      model: _modelName, 
+      apiKey: apiKey,
+      systemInstruction: Content.system('''
+あなたは自己分析の要約AIです。
+提供されるコーチングの対話履歴から、ユーザーが最終的にたどり着いた「幸せの新しい気づき」や「コアバリュー」を、
+マインドマップの1つのノード（枝）として追加できるような【20文字以内の短い1文】で抽出してください。
+出力は抽出したテキストのみとし、それ以外の文字や解説は一切含めないでください。
+例：「一人静かな時間が心の支え」「美味しいご飯で全てリセット」
+'''),
+    );
+
+    final contents = messages.map((m) {
+      return Content(m['role'] == 'user' ? 'user' : 'model', [TextPart(m['content']!)]);
+    }).toList();
+
+    try {
+      final response = await model.generateContent(contents);
+      return response.text?.trim() ?? '自己分析の新たな気づき';
+    } catch (e) {
+      print('Gemini Chat Error: $e');
+      return 'AIとの対話の気づき';
+    }
+  }
 }

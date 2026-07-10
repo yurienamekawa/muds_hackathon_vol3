@@ -45,5 +45,9 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>We need access to your photo library to save the mindmap screenshot.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>We need access to save the mindmap screenshot to your photo library.</string>
 </dict>
 </plist>
